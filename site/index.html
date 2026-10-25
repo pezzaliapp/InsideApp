@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>InsideApp — Guarda dentro il software</title>
+    <meta
+      name="description"
+      content="InsideApp è un'applicazione locale e gratuita per capire come sono fatte le applicazioni che possiedi o sei autorizzato ad analizzare. Analisi statica, rapporti in italiano con prove verificabili. Il software analizzato non viene mai eseguito."
+    />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip" href="#contenuto">Vai al contenuto</a>
+    <header class="top">
+      <div class="wrap top-row">
+        <a class="brand" href="#" aria-label="InsideApp, inizio pagina">
+          <span class="logo" aria-hidden="true">IA</span>
+          <span>InsideApp <span class="brand-by">— PezzaliAPP</span></span>
+        </a>
+        <nav aria-label="Sezioni">
+          <ul>
+            <li><a href="#come-funziona">Come funziona</a></li>
+            <li><a href="#formati">Formati</a></li>
+            <li><a href="#modalita">Modalità</a></li>
+            <li><a href="#sicurezza">Sicurezza</a></li>
+            <li><a href="#installazione">Installazione</a></li>
+            <li><a href="#domande">Domande</a></li>
+            <li>
+              <a href="https://github.com/pezzaliapp/InsideApp">GitHub</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main id="contenuto">
+      <section class="hero">
+        <div class="wrap">
+          <h1>InsideApp <span>— Guarda dentro il software</span></h1>
+          <p class="lead">
+            Un'applicazione locale e gratuita per capire come sono fatte le
+            applicazioni che possiedi o che sei autorizzato ad analizzare.
+            InsideApp legge i file, non esegue mai il software analizzato, e
+            produce un rapporto in italiano in cui ogni affermazione ha una
+            prova verificabile.
+          </p>
+          <div class="cta">
+            <a class="button primary" href="#installazione">Come installarlo</a>
+            <a class="button" href="https://github.com/pezzaliapp/InsideApp"
+              >Codice su GitHub</a
+            >
+          </div>
+          <ul class="facts" aria-label="In sintesi">
+            <li>Open source, licenza MIT</li>
+            <li>Funziona offline, sul tuo Mac</li>
+            <li>Nessun account, nessuna chiave API</li>
+            <li>Claude Code facoltativo</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="come-funziona" class="band">
+        <div class="wrap">
+          <h2>Come funziona</h2>
+          <ol class="steps">
+            <li>
+              <strong>Seleziona</strong> Scegli un'applicazione, un file o una
+              cartella con la finestra di sistema, dopo aver dichiarato che puoi
+              analizzarla.
+            </li>
+            <li>
+              <strong>Analizza</strong> InsideApp legge la struttura del
+              software in modo statico. Vedi la fase e il tempo trascorso, e
+              puoi annullare.
+            </li>
+            <li>
+              <strong>Comprendi</strong> Leggi il rapporto: componenti,
+              comunicazioni, dati e file, sicurezza, limiti.
+            </li>
+            <li>
+              <strong>Esporta</strong> Salva il rapporto in HTML o Markdown,
+              oppure stampalo o salvalo in PDF.
+            </li>
+          </ol>
+          <h3>Quattro classi, senza ambiguità</h3>
+          <dl class="classes">
+            <div class="observed">
+              <dt>Osservato</dt>
+              <dd>
+                Letto direttamente dai byte o dal codice dell'applicazione.
+              </dd>
+            </div>
+            <div class="derived">
+              <dt>Derivato</dt>
+              <dd>
+                Dedotto dall'analisi statica con confidenza alta, ad esempio un
+                collegamento tra file.
+              </dd>
+            </div>
+            <div class="hypothesis">
+              <dt>Ipotesi</dt>
+              <dd>
+                Possibile ma non dimostrato, come una capacità suggerita da una
+                libreria importata.
+              </dd>
+            </div>
+            <div class="unknown">
+              <dt>Sconosciuto</dt>
+              <dd>
+                Non determinabile con l'analisi eseguita. Un elemento non
+                trovato non dimostra che sia assente.
+              </dd>
+            </div>
+          </dl>
+          <p>
+            Ogni affermazione indica la sua prova: file, posizione, impronta
+            SHA-256 e identificativo Evidence del motore.
+          </p>
+        </div>
+      </section>
+
+      <section id="formati">
+        <div class="wrap">
+          <h2>Formati supportati</h2>
+          <div class="table-scroll">
+            <table>
+              <caption>
+                Cosa compare nel rapporto per ciascun formato
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Formato</th>
+                  <th scope="col">Nel rapporto</th>
+                  <th scope="col">Non incluso</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">
+                    App Electron e JavaScript<br /><span class="muted"
+                      >cartelle o file <code>.asar</code></span
+                    >
+                  </th>
+                  <td data-label="Nel rapporto">
+                    Processo principale, preload, finestre e impostazioni di
+                    sicurezza, canali IPC, API esposte all'interfaccia, moduli
+                    usati.
+                  </td>
+                  <td data-label="Non incluso">
+                    Comportamento durante l'esecuzione: l'app non viene avviata.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">
+                    App macOS<br /><span class="muted"><code>.app</code></span>
+                  </th>
+                  <td data-label="Nel rapporto">
+                    Struttura e dimensione misurata; da Info.plist identità,
+                    versione, sistema minimo, permessi dichiarati e schemi URL;
+                    architetture e librerie dell'eseguibile; firma, Hardened
+                    Runtime ed entitlement.
+                  </td>
+                  <td data-label="Non incluso">
+                    Verifica della firma presso Apple; decompilazione.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">
+                    Eseguibili Windows<br /><span class="muted"
+                      ><code>.exe</code>, <code>.dll</code></span
+                    >
+                  </th>
+                  <td data-label="Nel rapporto">
+                    Intestazioni e architettura, EXE o DLL, .NET o codice
+                    nativo, DLL importate, risorse, presenza della firma
+                    Authenticode, funzioni esportate. Le capacità suggerite
+                    dalle importazioni sono indicate come Ipotesi.
+                  </td>
+                  <td data-label="Non incluso">
+                    Nomi e permessi delle sezioni; verifica dei certificati;
+                    decompilazione.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">Database SQLite</th>
+                  <td data-label="Nel rapporto">
+                    Tabelle con colonne e tipi, indici, viste e trigger, letti
+                    da una copia privata.
+                  </td>
+                  <td data-label="Non incluso">
+                    Il contenuto delle righe: non viene mai letto. Database
+                    cifrati.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">Altri file</th>
+                  <td data-label="Nel rapporto">
+                    Formato riconosciuto, dimensione, contenuti di archivi,
+                    integrità.
+                  </td>
+                  <td data-label="Non incluso">
+                    Analisi specifiche non disponibili per quel formato.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="note">
+            La decompilazione del codice nativo richiede un motore esterno
+            gratuito come
+            <a href="https://github.com/NationalSecurityAgency/ghidra">Ghidra</a
+            >, da installare a parte: non fa parte dei rapporti.
+          </p>
+        </div>
+      </section>
+
+      <section id="modalita" class="band">
+        <div class="wrap">
+          <h2>Due modalità, un solo motore</h2>
+          <div class="cards">
+            <article class="card">
+              <h3>Modalità autonoma</h3>
+              <p>
+                L'interfaccia si apre nel browser del tuo Mac con
+                <code>./scripts/insideapp.sh gui</code> e funziona solo su
+                questo computer. Lo stesso rapporto è disponibile anche da
+                terminale con <code>./scripts/insideapp.sh report</code>.
+              </p>
+              <p>
+                Non serve Claude Code, non serve un account e non serve una
+                chiave API.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Claude Code, se vuoi</h3>
+              <p>
+                Chi usa già
+                <a
+                  href="https://docs.anthropic.com/en/docs/claude-code/overview"
+                  >Claude Code</a
+                >
+                può collegarlo al server MCP del progetto
+                (<code>.mcp.json</code>): lo strumento
+                <code>create_report</code> produce lo stesso rapporto. La
+                configurazione resta nella cartella del progetto, senza
+                modifiche globali.
+              </p>
+              <p>
+                Claude Code richiede un proprio abbonamento: il testo che gli
+                invii viene elaborato secondo le sue condizioni. InsideApp non
+                invia nulla da solo.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="sicurezza">
+        <div class="wrap">
+          <h2>Sicurezza e privacy</h2>
+          <ul class="checks">
+            <li>
+              <strong>Mai eseguito.</strong> Il software analizzato viene letto,
+              non avviato né emulato.
+            </li>
+            <li>
+              <strong>Tutto in locale.</strong> Nessun file o rapporto viene
+              inviato in rete; nessuna telemetria.
+            </li>
+            <li>
+              <strong>Solo ciò che scegli.</strong> Si analizza un elemento alla
+              volta, dopo la tua dichiarazione di autorizzazione. La radice del
+              disco e la cartella Inizio sono escluse.
+            </li>
+            <li>
+              <strong>Interfaccia protetta.</strong> Il server ascolta solo su
+              <code>127.0.0.1</code>, con un codice monouso a ogni avvio, cookie
+              di sessione protetto e controlli contro DNS rebinding e CSRF.
+            </li>
+            <li>
+              <strong>Rapporti senza percorsi.</strong> I rapporti esportati
+              dall'interfaccia non contengono il percorso dell'elemento sul tuo
+              computer; i dati delle tabelle SQLite non vengono letti.
+            </li>
+            <li>
+              <strong>Questo sito</strong> è una pagina statica: non riceve
+              file, non usa cookie, analytics né risorse di terze parti.
+            </li>
+          </ul>
+          <p class="note">
+            Usa InsideApp solo su software tuo o che sei autorizzato ad
+            analizzare, nel rispetto delle licenze e della legge. Leggi le
+            <a
+              href="https://github.com/pezzaliapp/InsideApp/blob/main/AVVERTENZE.md"
+              >avvertenze</a
+            >.
+          </p>
+        </div>
+      </section>
+
+      <section id="installazione" class="band">
+        <div class="wrap">
+          <h2>Installazione e primo avvio</h2>
+          <p>
+            Non esiste ancora un programma d'installazione: InsideApp si
+            installa dal codice sorgente con il Terminale. Tutto resta nella
+            cartella del progetto e in <code>~/.insideapp/</code>; il Node.js
+            del sistema e gli altri progetti non vengono toccati.
+          </p>
+          <h3>Sistemi e requisiti</h3>
+          <ul class="systems">
+            <li>
+              <span class="tag ok">Verificato</span> Mac con Apple Silicon
+              (arm64), macOS 26.
+            </li>
+            <li>
+              <span class="tag wait">Non verificato</span> Mac con processore
+              Intel; Linux (previsto dal codice originale, non provato in
+              InsideApp).
+            </li>
+            <li><span class="tag no">Non supportato</span> Windows.</li>
+            <li>
+              Git e il Terminale di macOS; circa 1,5 GB di spazio libero; una
+              connessione Internet solo durante l'installazione, per scaricare
+              Node.js e le dipendenze.
+            </li>
+          </ul>
+          <h3>1. Scarica il codice</h3>
+          <pre><code>git clone https://github.com/pezzaliapp/InsideApp.git ~/InsideApp</code></pre>
+          <h3>2. Node.js in una cartella isolata</h3>
+          <pre><code>V=v24.22.1
+mkdir -p ~/.insideapp/download ~/.insideapp/toolchain
+cd ~/.insideapp/download
+curl -fsSLO https://nodejs.org/dist/$V/SHASUMS256.txt
+curl -fsSLO https://nodejs.org/dist/$V/node-$V-darwin-arm64.tar.xz
+grep " node-$V-darwin-arm64.tar.xz\$" SHASUMS256.txt | shasum -a 256 -c -
+tar -xJf node-$V-darwin-arm64.tar.xz -C ~/.insideapp/toolchain</code></pre>
+          <h3>3. Dipendenze e compilazione</h3>
+          <pre><code>cd ~/InsideApp
+export PATH="$HOME/.insideapp/toolchain/node-v24.22.1-darwin-arm64/bin:$PATH"
+npm ci --ignore-scripts --no-audit --no-fund --no-update-notifier
+npm run build:cached</code></pre>
+          <h3>4. Primo avvio</h3>
+          <pre><code>./scripts/insideapp.sh gui</code></pre>
+          <p>
+            Si apre il browser predefinito sull'interfaccia locale. La chiudi
+            con il pulsante «Chiudi InsideApp» o con Ctrl+C nel Terminale. Per
+            aggiornare: <code>git pull</code>, poi ripeti il passo 3.
+          </p>
+          <h3>Facoltativo: Claude Code</h3>
+          <p>
+            Avvia <code>claude</code> dalla cartella <code>~/InsideApp</code>,
+            approva il server <code>insideapp</code> quando Claude Code lo
+            chiede e controlla con <code>/mcp</code>.
+          </p>
+        </div>
+      </section>
+
+      <section id="domande">
+        <div class="wrap">
+          <h2>Domande frequenti</h2>
+          <details>
+            <summary>InsideApp avvia le applicazioni che analizza?</summary>
+            <p>
+              No. Legge i file e la loro struttura. Per alcune informazioni usa
+              strumenti di sola lettura del sistema, come
+              <code>codesign</code> e <code>plutil</code>, ma l'applicazione
+              analizzata non viene mai eseguita.
+            </p>
+          </details>
+          <details>
+            <summary>Serve Claude Code o un abbonamento?</summary>
+            <p>
+              No. La modalità autonoma è completa e gratuita. Claude Code è
+              un'integrazione facoltativa per chi lo usa già, con il proprio
+              abbonamento.
+            </p>
+          </details>
+          <details>
+            <summary>I miei file vengono inviati da qualche parte?</summary>
+            <p>
+              No. L'analisi avviene sul tuo Mac e InsideApp non contatta servizi
+              esterni. Se scegli di incollare un rapporto in Claude Code, quel
+              testo viene elaborato dal servizio di Anthropic.
+            </p>
+          </details>
+          <details>
+            <summary>Posso analizzare qualsiasi applicazione?</summary>
+            <p>
+              Solo software tuo o che sei autorizzato ad analizzare. InsideApp
+              chiede una dichiarazione esplicita prima di ogni analisi e non
+              aiuta ad aggirare protezioni, licenze o DRM.
+            </p>
+          </details>
+          <details>
+            <summary>Funziona su Windows o Linux?</summary>
+            <p>
+              Oggi è verificato solo su Mac con Apple Silicon. Può analizzare
+              file Windows, ma non gira su Windows. Linux non è ancora stato
+              provato.
+            </p>
+          </details>
+          <details>
+            <summary>Può decompilare un programma?</summary>
+            <p>
+              I rapporti si limitano all'analisi strutturale. Il motore può
+              collegarsi a strumenti gratuiti come Ghidra, da installare a
+              parte, per analisi più profonde da terminale o con Claude Code.
+            </p>
+          </details>
+          <details>
+            <summary>Quanto costa?</summary>
+            <p>
+              Niente. InsideApp è open source con licenza MIT e non usa servizi
+              a pagamento.
+            </p>
+          </details>
+        </div>
+      </section>
+
+      <section id="licenza" class="band">
+        <div class="wrap">
+          <h2>Licenza, autore e attribuzioni</h2>
+          <p>
+            InsideApp è sviluppato da Alessandro Pezzali (PezzaliAPP) ed è
+            distribuito con
+            <a href="https://github.com/pezzaliapp/InsideApp/blob/main/LICENSE"
+              >licenza MIT</a
+            >.
+          </p>
+          <p>
+            È un'opera derivata da
+            <a href="https://github.com/morluto/rea"
+              >REA — Reverse Engineer Anything</a
+            >
+            (licenza MIT, © 2026 morluto). InsideApp non è affiliato,
+            sponsorizzato né approvato dagli autori di REA. Le licenze dei
+            componenti di terze parti sono conservate nel repository.
+          </p>
+          <h3>Documentazione</h3>
+          <ul class="links">
+            <li>
+              <a href="https://github.com/pezzaliapp/InsideApp#readme"
+                >Guida (README)</a
+              >
+            </li>
+            <li>
+              <a
+                href="https://github.com/pezzaliapp/InsideApp/blob/main/AVVERTENZE.md"
+                >Avvertenze sull'uso lecito</a
+              >
+            </li>
+            <li>
+              <a
+                href="https://github.com/pezzaliapp/InsideApp/blob/main/NOTICE.md"
+                >Derivazione e modifiche</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/pezzaliapp/InsideApp/tree/main/docs"
+                >Documentazione tecnica del motore (in inglese)</a
+              >
+            </li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bottom">
+      <div class="wrap">
+        <p>
+          InsideApp — PezzaliAPP · Licenza MIT ·
+          <a href="https://github.com/pezzaliapp/InsideApp"
+            >github.com/pezzaliapp/InsideApp</a
+          >
+        </p>
+        <p>
+          Derivato da REA di morluto. Claude e Claude Code sono marchi di
+          Anthropic; Ghidra è un progetto della NSA. I nomi sono citati solo per
+          descrivere le integrazioni.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
