@@ -18,6 +18,12 @@ npm run test:boundary
 npm run docs:check
 ```
 
+Esegui i comandi `npm` dalla radice del progetto. Il file `.npmrc` del progetto
+scrive i log di npm in `.cache/npm-logs/`, esclusa da Git, invece che nella
+cartella condivisa `~/.npm/_logs`. npm risolve quel percorso rispetto alla
+cartella corrente: da una sottocartella creerebbe un altro `.cache/npm-logs`
+lì dentro.
+
 ## Introdurre in futuro una CI gratuita
 
 Prima di aggiungere un file in `.github/workflows/` serve l'autorizzazione del

@@ -60,7 +60,11 @@ it.skipIf(process.platform === "android")(
         packages: { "": { name: "rea-cache-fixture", version: "1.0.0" } },
       }),
     );
-    await writeFile(join(root, "turbo.json"), JSON.stringify({ tasks }));
+    // Keeps npm logs of the fixture runs out of the shared ~/.npm/_logs.
+    await writeFile(
+      join(root, "turbo.json"),
+      JSON.stringify({ globalPassThroughEnv: ["npm_config_logs_dir"], tasks }),
+    );
     await writeFile(
       join(root, "artifact-input.txt"),
       "unchanged preparation input",

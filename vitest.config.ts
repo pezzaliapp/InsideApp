@@ -1,6 +1,7 @@
 import { realpathSync } from "node:fs";
 import { availableParallelism, tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "vitest/config";
 import { parseCLI } from "vitest/node";
@@ -24,6 +25,13 @@ if (
 }
 
 const CANONICAL_TEMPORARY_DIRECTORY = realpathSync(tmpdir());
+// InsideApp: npm started by tests (often in temporary fixture repositories)
+// logs here instead of the shared ~/.npm/_logs.
+const NPM_LOGS_DIRECTORY = join(
+  dirname(fileURLToPath(import.meta.url)),
+  ".cache",
+  "npm-logs",
+);
 // Use Vitest's option parser so explicit false and spaced shard values retain
 // their meaning. Unknown worker/embedding arguments are not Vitest options.
 const { options: testOptions } = parseCLI(
@@ -139,7 +147,10 @@ const projects = TEST_PROJECTS.map((project) => {
 
 export default defineConfig({
   test: {
-    env: { TMPDIR: CANONICAL_TEMPORARY_DIRECTORY },
+    env: {
+      TMPDIR: CANONICAL_TEMPORARY_DIRECTORY,
+      npm_config_logs_dir: NPM_LOGS_DIRECTORY,
+    },
     maxWorkers: MAX_TEST_WORKERS,
     projects,
     ...(process.env.REA_CI_TEST_HISTORY

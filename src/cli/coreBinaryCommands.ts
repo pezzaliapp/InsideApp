@@ -1,6 +1,5 @@
 import { z } from "incur";
-import { realpath, stat } from "node:fs/promises";
-import { findAppBundleResourceRoot } from "../application/AppBundleExecutable.js";
+import { isJavaScriptApplicationPath } from "../application/javascript/javascriptApplicationPath.js";
 
 import {
   addressOrProcedureGuidance,
@@ -266,23 +265,6 @@ const routesToJavaScriptAnalysis = async (
   options.architecture === undefined &&
   options["entry-point"] === undefined &&
   (await isJavaScriptApplicationPath(path));
-
-/** True for `.asar` files and plain directories that `analyze` routes to JavaScript analysis. */
-export const isJavaScriptApplicationPath = async (
-  path: string,
-): Promise<boolean> => {
-  try {
-    const canonical = await realpath(path);
-    if (canonical.toLowerCase().endsWith(".asar")) return true;
-    if (!(await stat(canonical)).isDirectory()) return false;
-    const bundle = await findAppBundleResourceRoot(canonical);
-    // Unresolved native metadata must reach native admission's typed failure.
-    return bundle.ok && bundle.value === undefined;
-  } catch (cause: unknown) {
-    void cause;
-    return false;
-  }
-};
 
 const registerXrefsCommand = (
   cli: CliInstance,
