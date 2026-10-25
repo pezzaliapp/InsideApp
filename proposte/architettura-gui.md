@@ -1,7 +1,6 @@
 # Architettura di InsideApp: modalità autonoma e modalità Claude
 
-Stato: architettura approvata. G0, G1, G2 e G3 completati; G4 e G5 da
-autorizzare uno alla volta. Sostituisce e dettaglia `proposte/gui-insideapp.md`.
+Stato: architettura approvata. G0–G4 completati; G5 da autorizzare. Sostituisce e dettaglia `proposte/gui-insideapp.md`.
 
 ## 1. Obiettivi e vincoli
 
@@ -62,8 +61,9 @@ generateReport(
 - **Parità:** un test confronta byte per byte il rapporto prodotto dalla CLI con
   quello del servizio chiamato in-process, con porte che non passano dalla CLI.
   La JavaScript usa uno scope proprio, come farà la GUI.
-- **G4:** lo strumento MCP `create_report` userà lo stesso `generateReport`, con
-  porte proprie del server MCP.
+- **G4 (fatto):** lo strumento MCP `create_report` usa lo stesso
+  `generateReport` con le porte di composizione condivise; l'analisi JavaScript
+  usa lo scope di risorse del server MCP.
 
 ### 2.2 Adapter GUI (`src/gui/`)
 
@@ -127,10 +127,12 @@ percorso", con conferma esplicita.
   `.claude/skills/insideapp/`. Claude Code può già lanciare
   `./scripts/insideapp.sh report … --authorized` dopo aver chiesto la conferma di
   liceità.
-- **Da decidere.** Un nuovo strumento MCP `create_report` che restituisca il
-  modello del rapporto compatto (conteggi e affermazioni), invece dei circa
-  940 KB dell'analisi completa. Porterebbe il catalogo a 228 strumenti e
-  richiederebbe di aggiornare contratti, digest e test.
+- **`create_report` (G4, fatto).**
+  - Restituisce Evidence derivata con il rapporto: circa 15 KB per l'app di
+    esempio, invece dei circa 940 KB dell'analisi completa.
+  - Richiede `authorized: true` e omette il percorso locale.
+  - Registra nella sessione le Evidence di origine.
+  - Il catalogo passa a 228 strumenti.
 - **Collegamento tra le modalità.** Ponte manuale, nessuna chiamata
   automatica: la GUI prepara un testo da incollare in Claude Code. Claude Code
   non controlla la GUI e la GUI non avvia Claude Code.
@@ -303,14 +305,14 @@ estesa per ammettere solo connessioni a `127.0.0.1` sulla porta della GUI.
 
 ## 6. Roadmap (ogni passo si ferma per l'approvazione)
 
-| Passo | Contenuto                                                                                        | Esito verificabile                          |
-| ----- | ------------------------------------------------------------------------------------------------ | ------------------------------------------- |
-| G0    | `generateReport` applicativo, instradamento condiviso, CLI adattata, log npm locali (fatto)      | test della Fase 0 invariati, parità         |
-| G1    | server GUI sicuro (sessione, Host, Origin, CSRF, CSP, limiti, chiusura); pagina iniziale (fatto) | test di confine HTTP e mutazioni            |
-| G2    | flusso completo: liceità, scelta, analisi, rapporto, esportazione (fatto)                        | test di flusso, parità ed effetti sull'host |
-| G3    | formati prioritari .app, PE e SQLite; dimensioni misurate; limiti (fatto)                        | rapporti sulle fixture di ciascun tipo      |
-| G4    | modalità Claude: testo per Claude Code; strumento MCP `create_report` sullo stesso servizio      | test MCP e catalogo a 228 strumenti         |
-| G5    | sito statico su `insideapp.pezzalihub.app` (Cloudflare Free)                                     | sito pubblicato dopo la tua approvazione    |
+| Passo | Contenuto                                                                                        | Esito verificabile                                     |
+| ----- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| G0    | `generateReport` applicativo, instradamento condiviso, CLI adattata, log npm locali (fatto)      | test della Fase 0 invariati, parità                    |
+| G1    | server GUI sicuro (sessione, Host, Origin, CSRF, CSP, limiti, chiusura); pagina iniziale (fatto) | test di confine HTTP e mutazioni                       |
+| G2    | flusso completo: liceità, scelta, analisi, rapporto, esportazione (fatto)                        | test di flusso, parità ed effetti sull'host            |
+| G3    | formati prioritari .app, PE e SQLite; dimensioni misurate; limiti (fatto)                        | rapporti sulle fixture di ciascun tipo                 |
+| G4    | strumento MCP `create_report` sullo stesso servizio; sezione Claude Code nella GUI (fatto)       | test MCP, parità CLI/GUI/MCP, catalogo a 228 strumenti |
+| G5    | sito statico su `insideapp.pezzalihub.app` (Cloudflare Free)                                     | sito pubblicato dopo la tua approvazione               |
 
 ### 6.1 Formati prioritari (G3, completato)
 

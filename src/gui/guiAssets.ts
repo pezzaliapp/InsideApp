@@ -91,6 +91,14 @@ export const GUI_APP_HTML = page(
 <h2 id="export-title">4. Esporta</h2>
 <p>Il rapporto esportato non contiene il percorso dell'elemento sul tuo computer.</p>
 <div class="actions"><button type="button" id="export-html">Scarica HTML</button><button type="button" id="export-md">Scarica Markdown</button><button type="button" id="print">Stampa o salva in PDF</button></div>
+<div class="actions"><button type="button" id="claude-copy">Copia richiesta per Claude Code…</button></div>
+<div id="claude-consent" class="consent" hidden>
+<p>Verrà copiato negli appunti il rapporto, senza il percorso dell'elemento, con una richiesta di spiegazione. Se lo incolli in Claude Code, il testo viene elaborato dal servizio AI di Anthropic secondo le condizioni del tuo abbonamento. InsideApp non invia nulla da solo.</p>
+<label class="check"><input type="checkbox" id="claude-consent-check"> Ho capito: incollerò io il testo in Claude Code, se lo vorrò.</label>
+<div class="actions"><button type="button" id="claude-copy-confirm" disabled>Copia negli appunti</button><button type="button" id="claude-copy-cancel">Annulla</button></div>
+<p id="claude-copy-state" class="note" role="status"></p>
+<textarea id="claude-copy-fallback" readonly hidden aria-label="Testo da copiare per Claude Code"></textarea>
+</div>
 </section>
 
 <div class="modes no-print">
@@ -103,7 +111,14 @@ export const GUI_APP_HTML = page(
 <h2 id="claude-title">Modalità Claude Code (facoltativa)</h2>
 <p>Non serve per usare InsideApp. Se vuoi, Claude Code usa lo stesso motore tramite il server MCP del progetto, entro il tuo abbonamento: nessuna API a consumo.</p>
 <p id="claude-state" class="state">Lettura della configurazione…</p>
-<p class="note">Avvia Claude Code dalla cartella del progetto e approva il server <code>insideapp</code> di <code>.mcp.json</code>.</p>
+<ol class="setup">
+<li>Apri il Terminale nella cartella di InsideApp.</li>
+<li>Avvia Claude Code con <code>claude</code> e approva il server <code>insideapp</code> di <code>.mcp.json</code> quando te lo chiede.</li>
+<li>Controlla con <code>/mcp</code> che il server sia collegato; poi chiedi, ad esempio, un rapporto con lo strumento <code>create_report</code>.</li>
+</ol>
+<div class="actions"><button type="button" id="claude-setup-copy">Copia il comando</button></div>
+<p id="claude-setup-state" class="note" role="status"></p>
+<p class="note">InsideApp non avvia Claude Code, non modifica configurazioni globali e non chiede chiavi API.</p>
 </section>
 </div>
 
@@ -162,6 +177,9 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
 button:disabled{opacity:.55;cursor:not-allowed}
 button.danger{border-color:var(--danger);color:var(--danger)}
 footer{margin-top:28px;color:var(--muted);font-size:.85rem}
+.setup{margin:8px 0;padding-left:22px}
+.consent{border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:8px;padding:10px 14px;margin-top:8px}
+textarea{width:100%;min-height:160px;font:.85rem ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px}
 @media print{.no-print,footer,.brand .tagline{display:none!important}body{background:#fff;color:#000}main{padding:0}.card{border:0;padding:0}details{display:block}details>summary{display:none}.hidden-kind{display:block}}
 `;
 
@@ -430,6 +448,38 @@ export const GUI_APP_JS = `"use strict";
   byId("export-html").addEventListener("click", () => { void download("html"); });
   byId("export-md").addEventListener("click", () => { void download("md"); });
   byId("print").addEventListener("click", () => { steps("export"); window.print(); });
+  // Claude Code is optional: text only moves when the user copies it.
+  const CLAUDE_PROMPT = "Ecco un rapporto di InsideApp su un'applicazione che sono autorizzato ad analizzare. " +
+    "Spiegamelo in italiano in modo semplice: cosa fa l'applicazione, quali componenti, comunicazioni e dati usa, " +
+    "quali aspetti di sicurezza meritano attenzione e che cosa resta sconosciuto. " +
+    "Rispetta le classi Osservato, Derivato, Ipotesi e Sconosciuto: non presentare ipotesi come fatti.\\n\\n";
+  const copyText = async (text, stateId, fallbackId) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      byId(stateId).textContent = "Copiato negli appunti.";
+      if (fallbackId) byId(fallbackId).hidden = true;
+    } catch {
+      byId(stateId).textContent = "Gli appunti non sono disponibili: seleziona e copia il testo qui sotto.";
+      if (fallbackId) { byId(fallbackId).value = text; byId(fallbackId).hidden = false; }
+    }
+  };
+  byId("claude-setup-copy").addEventListener("click", () => { void copyText("claude", "claude-setup-state"); });
+  byId("claude-copy").addEventListener("click", () => {
+    byId("claude-consent").hidden = false;
+    byId("claude-consent-check").checked = false;
+    byId("claude-copy-confirm").disabled = true;
+    byId("claude-copy-state").textContent = "";
+  });
+  byId("claude-consent-check").addEventListener("change", () => {
+    byId("claude-copy-confirm").disabled = !byId("claude-consent-check").checked;
+  });
+  byId("claude-copy-cancel").addEventListener("click", () => { byId("claude-consent").hidden = true; });
+  byId("claude-copy-confirm").addEventListener("click", async () => {
+    if (!byId("claude-consent-check").checked || !state.reportId) return;
+    const response = await api("/api/reports/" + state.reportId + "/export.md");
+    if (sessionLost(response) || !response.ok) { byId("claude-copy-state").textContent = "Il rapporto non è disponibile."; return; }
+    await copyText(CLAUDE_PROMPT + (await response.text()), "claude-copy-state", "claude-copy-fallback");
+  });
   byId("refresh").addEventListener("click", () => { void refresh(); });
   byId("shutdown").addEventListener("click", async () => {
     clearTimeout(state.poll);

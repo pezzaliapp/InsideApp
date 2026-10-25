@@ -128,6 +128,7 @@ export const toolFamilyCatalog = (sources) => {
         ...sources.javascriptRecoveryContracts
           .JAVASCRIPT_RECOVERY_TOOL_CONTRACTS,
         ...sources.environmentContracts.ENVIRONMENT_TOOL_CONTRACTS,
+        ...sources.reportContracts.REPORT_TOOL_CONTRACTS,
       ],
     },
     {

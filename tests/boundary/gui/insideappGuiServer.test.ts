@@ -1,8 +1,11 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import { dirname } from "node:path";
 
+import { Script } from "node:vm";
+
 import { describe, expect, it } from "vitest";
 
+import { GUI_APP_JS, GUI_START_JS } from "../../../src/gui/guiAssets.js";
 import { GUI_CONTENT_SECURITY_POLICY } from "../../../src/gui/guiSecurity.js";
 import {
   GUI_MAX_BODY_BYTES,
@@ -306,6 +309,17 @@ describe("InsideApp GUI input limits and headers", () => {
       expect(response.headers["access-control-allow-origin"]).toBeUndefined();
     }
     expect(GUI_CONTENT_SECURITY_POLICY).not.toMatch(/unsafe|\*|https?:/u);
+  });
+});
+
+describe("InsideApp GUI page scripts", () => {
+  it("are syntactically valid JavaScript", () => {
+    // Scripts live in template strings, so the type checker cannot see them.
+    for (const [name, source] of [
+      ["start.js", GUI_START_JS],
+      ["app.js", GUI_APP_JS],
+    ] as const)
+      expect(() => new Script(source, { filename: name }), name).not.toThrow();
   });
 });
 

@@ -147,6 +147,14 @@ export class ToolResultDelivery {
     );
   }
 
+  /** Deliver a failure an application workflow already projected. */
+  toProjectedErrorToolResult(
+    projected: AnalysisErrorProjection,
+    targetContent: boolean,
+  ): CallToolResult {
+    return this.projectedErrorResult(projected, targetContent);
+  }
+
   /** Retain valid partial Evidence and reference it only after recording succeeds. */
   toPartialErrorToolResult(
     error: AnalysisError,

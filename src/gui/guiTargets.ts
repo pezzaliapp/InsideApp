@@ -1,8 +1,9 @@
 import { execFile } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { lstat } from "node:fs/promises";
-import { basename, dirname, isAbsolute, resolve, sep } from "node:path";
+import { basename, isAbsolute } from "node:path";
 
+import { isTooBroadReportFolder } from "../application/report/reportTarget.js";
 import {
   selectReportRoute,
   type ReportRoute,
@@ -87,18 +88,6 @@ export interface GuiTarget extends GuiTargetView {
   readonly path: string;
 }
 
-/** The disk root, first-level folders and the home folder and its parent. */
-const isTooBroad = (
-  path: string,
-  homeDirectory: string | undefined,
-): boolean => {
-  const normalized = resolve(path);
-  if (normalized.split(sep).filter(Boolean).length <= 1) return true;
-  if (homeDirectory === undefined) return false;
-  const home = resolve(homeDirectory);
-  return normalized === home || normalized === dirname(home);
-};
-
 /** Most chosen items kept per session; older choices are forgotten. */
 export const GUI_MAX_TARGETS = 20;
 
@@ -121,7 +110,7 @@ export class GuiTargets {
       return undefined;
     }
     if (!info.isFile() && !info.isDirectory()) return undefined;
-    if (info.isDirectory() && isTooBroad(path, homeDirectory))
+    if (info.isDirectory() && isTooBroadReportFolder(path, homeDirectory))
       return "too-broad";
     const name = basename(path) || path;
     const target: GuiTarget = {

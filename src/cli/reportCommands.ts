@@ -12,13 +12,16 @@ import {
   renderReportMarkdown,
 } from "../application/report/renderInsideAppReport.js";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
-import { isCliOperationFailure, logCliCommand } from "../cliLogging.js";
+import { logCliCommand } from "../cliLogging.js";
 import { homeDirectoryFromEnvironment } from "../config/homeDirectory.js";
 import {
   AnalysisInputError,
   AnalysisOutputError,
 } from "../domain/analysisErrorCore.js";
-import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
+import {
+  projectAnalysisError,
+  type AnalysisErrorProjection,
+} from "../domain/analysisErrorProjection.js";
 import type { JsonValue } from "../domain/jsonValue.js";
 import type { InsideAppReport } from "../domain/report/insideAppReport.js";
 import { localPathStringSchema } from "../domain/localPath.js";
@@ -66,13 +69,16 @@ const cliJavaScriptStep =
   async (
     path: string,
     signal: AbortSignal,
-  ): Promise<Result<JsonValue, JsonValue>> => {
+  ): Promise<Result<JsonValue, AnalysisErrorProjection>> => {
+    const { analysisFailureProjection } =
+      await import("../composition/reportAnalysis.js");
     const value = await runCliJavaScriptApplicationAnalysis(
       { input_path: path },
       environment,
       signal,
     );
-    return isCliOperationFailure(value) ? err(value) : ok(value);
+    const failure = analysisFailureProjection(value);
+    return failure === undefined ? ok(value) : err(failure);
   };
 
 /** Write the selected renderings; an existing report for the same input is replaced. */

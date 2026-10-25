@@ -66,3 +66,6 @@ conservati integralmente in:
 - Rapporti per app macOS (.app), eseguibili Windows (.exe, .dll) e database
   SQLite (solo struttura), composti da operazioni esistenti del motore in
   `src/composition/reportAnalysis.ts`.
+- Strumento MCP `create_report`, sullo stesso servizio dei rapporti, e sezione
+  facoltativa Claude Code nell'interfaccia, senza chiavi API né configurazioni
+  globali.

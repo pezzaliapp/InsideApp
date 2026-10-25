@@ -187,6 +187,7 @@ export const CLI_COMMAND_NAMES = Object.freeze(Object.values(CLI_COMMANDS));
 export const CLI_COMMAND_TOOL_ALIASES = Object.freeze({
   "environment-build": ["export_environment_bundle"],
   analyze: ["binary_overview"],
+  report: ["create_report"],
   inspect: ["binary_overview"],
   decompile: ["procedure_pseudo_code"],
   function: ["analyze_function"],

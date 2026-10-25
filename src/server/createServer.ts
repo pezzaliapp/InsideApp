@@ -120,6 +120,7 @@ import { PRODUCT_IDENTITY } from "../identity.js";
 import { silentLogger } from "../logger.js";
 import type { Logger } from "pino";
 import { registerApplicationTools } from "./registerApplicationTools.js";
+import { registerReportTool } from "./registerReportTool.js";
 import { registerArtifactTools } from "./registerArtifactTools.js";
 import { registerNativeTools } from "./registerNativeTools.js";
 import { registerBrowserScenarioTool } from "./registerBrowserScenarioTool.js";
@@ -1311,6 +1312,13 @@ const registerObservationTools = ({
     logger,
     recordEvidence,
     recordEvidenceWithUnknown,
+    withAdmittedAnalysis,
+  });
+  registerReportTool(server, {
+    environment,
+    logger,
+    artifactResources,
+    recordEvidence,
     withAdmittedAnalysis,
   });
 };

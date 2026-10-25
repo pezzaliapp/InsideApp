@@ -134,6 +134,13 @@ export const TOOL_EFFECTS: Readonly<Record<string, ToolEffects>> = {
   inspect_apk_signature: evidence,
   inspect_python_pyc: evidence,
   inspect_erlang_beam: evidence,
+  // Static report lanes: private SQLite copies, codesign/plutil reads and the
+  // JavaScript worker; the analyzed target itself is never executed.
+  create_report: effects({
+    mutatesSession: true,
+    writesFilesystem: true,
+    launchesProcess: true,
+  }),
   inspect_sqlite_database: effects({
     mutatesSession: true,
     writesFilesystem: true,

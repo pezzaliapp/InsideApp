@@ -1,3 +1,7 @@
+import { z } from "zod";
+
+import { absoluteLocalPathStringSchema } from "../localPath.js";
+
 /**
  * InsideApp report model: an Italian, reader-oriented projection of completed
  * Evidence. Renderers (HTML, Markdown) only present this model; they never
@@ -217,3 +221,90 @@ export const countReportClaims = (
     for (const claim of section.claims) counts[claim.kind] += 1;
   return counts;
 };
+
+const claimKindSchema = z.enum(REPORT_CLAIM_KINDS);
+
+const evidenceReferenceSchema = z.strictObject({
+  evidence_id: z.string().nullable(),
+  path: z.string().nullable(),
+  position: z.string().nullable(),
+  sha256: z.string().nullable(),
+  method: z.string().nullable(),
+  engine_assessment: z.string(),
+  additional_occurrences: z.int().min(0),
+});
+
+const supplementRecordSchema = z.discriminatedUnion("status", [
+  z.strictObject({
+    operation: z.string(),
+    status: z.literal("completed"),
+    evidence_id: z.string(),
+  }),
+  z.strictObject({
+    operation: z.string(),
+    status: z.literal("failed"),
+    failure_code: z.string(),
+  }),
+]);
+
+/** Strict shape of an InsideApp report, as MCP delivers it. */
+export const insideAppReportSchema = z.strictObject({
+  schema: z.literal("InsideAppReport"),
+  schema_version: z.literal(1),
+  title: z.string(),
+  generated_at: z.string(),
+  generator: z.strictObject({ name: z.string(), version: z.string() }),
+  authorization: z.literal("declared-by-user"),
+  subject: z.strictObject({
+    name: z.string(),
+    path: z.string().nullable(),
+    format: z.string().nullable(),
+    sha256: z.string().nullable(),
+  }),
+  analysis: z.strictObject({
+    operation: z.string(),
+    evidence_id: z.string(),
+    provider: z.string(),
+    description: z.string(),
+    supplements: z.array(supplementRecordSchema),
+  }),
+  sections: z.array(
+    z.strictObject({
+      id: z.enum(REPORT_SECTION_IDS),
+      title: z.string(),
+      claims: z.array(
+        z.strictObject({
+          kind: claimKindSchema,
+          statement: z.string(),
+          evidence: evidenceReferenceSchema.nullable(),
+        }),
+      ),
+    }),
+  ),
+  engine_limitations: z.array(z.string()),
+  counts: z.strictObject({
+    observed: z.int().min(0),
+    derived: z.int().min(0),
+    hypothesis: z.int().min(0),
+    unknown: z.int().min(0),
+  }),
+}) satisfies z.ZodType<InsideAppReport>;
+
+/** Provider identity of report Evidence produced by `create_report`. */
+export const INSIDEAPP_REPORT_PROVIDER = {
+  id: "insideapp-report",
+  name: "InsideApp report",
+  version: "1",
+} as const;
+
+/** Input of the `create_report` MCP tool. */
+export const createReportInputSchema = z.strictObject({
+  path: absoluteLocalPathStringSchema.describe(
+    "Absolute local path of one application, file or folder the user chose: a JavaScript/Electron folder or .asar, a macOS .app bundle, a Windows .exe/.dll, a SQLite database or another file. Disk roots, first-level folders and the home folder are refused.",
+  ),
+  authorized: z
+    .boolean()
+    .describe(
+      "Set true only after the user stated that the software is theirs or that they may analyze it. false is refused before anything is read.",
+    ),
+});

@@ -32,6 +32,12 @@ describe("InsideApp GUI in the installed Chrome", () => {
       onTestFinished(() => browser.close());
       const context = await browser.newContext({ acceptDownloads: true });
       const page = await context.newPage();
+      // Record what the page writes to the clipboard, instead of the system clipboard.
+      await page.addInitScript(`
+        const copied = [];
+        Object.defineProperty(window, "__copied", { value: copied });
+        if (navigator.clipboard) navigator.clipboard.writeText = async (text) => { copied.push(text); };
+      `);
       const external: string[] = [];
       await context.route("**/*", (route) => {
         const url = route.request().url();
@@ -123,6 +129,25 @@ describe("InsideApp GUI in the installed Chrome", () => {
           .locator('#sections li[data-kind="observed"]:visible')
           .count(),
       ).toBe(6);
+
+      // Claude Code stays optional: copying needs an explicit acknowledgement.
+      await page.locator("#claude-setup-copy").click();
+      await page.locator("#claude-copy").click();
+      expect(await page.locator("#claude-copy-confirm").isDisabled()).toBe(
+        true,
+      );
+      await page.locator("#claude-consent-check").check();
+      await page.locator("#claude-copy-confirm").click();
+      await expect
+        .poll(() => page.locator("#claude-copy-state").textContent())
+        .toBe("Copiato negli appunti.");
+      const copied = (await page.evaluate("window.__copied")) as string[];
+      expect(copied[0]).toBe("claude");
+      expect(copied[1]).toMatch(
+        /^Ecco un rapporto di InsideApp su un'applicazione che sono autorizzato ad analizzare\./u,
+      );
+      expect(copied[1]).toContain("# Rapporto InsideApp — notes-electron");
+      expect(copied[1]).not.toContain(NOTES);
 
       const download = page.waitForEvent("download");
       await page.locator("#export-md").click();

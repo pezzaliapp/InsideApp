@@ -91,6 +91,22 @@ Analizza con InsideApp l'applicazione Electron in /percorso/della/mia-app:
 spiegami come funziona il salvataggio delle preferenze e mostrami le prove.
 ```
 
+Per un rapporto completo in italiano Claude usa lo strumento `create_report`.
+È lo stesso rapporto del comando `report` e dell'interfaccia:
+
+- Claude deve chiederti conferma che il software è tuo o che sei autorizzato
+  ad analizzarlo (`authorized: true`);
+- il rapporto non contiene il percorso dell'elemento;
+- la radice del disco, le cartelle di primo livello e la cartella Inizio sono
+  rifiutate.
+
+Anche l'interfaccia (`gui`) ha una sezione facoltativa su Claude Code. Il
+pulsante «Copia richiesta per Claude Code…» copia il rapporto con una richiesta
+di spiegazione solo dopo una tua conferma esplicita. Se poi incolli il testo in
+Claude Code, il servizio AI lo elabora secondo le condizioni del tuo
+abbonamento. InsideApp non avvia Claude Code, non modifica configurazioni
+globali e non chiede chiavi API.
+
 La skill di progetto [.claude/skills/insideapp](.claude/skills/insideapp/SKILL.md)
 guida Claude nell'uso degli strumenti e nella verifica della liceità
 dell'analisi.

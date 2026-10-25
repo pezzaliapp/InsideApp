@@ -65,11 +65,17 @@ Punti di partenza tipici:
 | Eseguibile nativo, decompilazione          | `open_binary`, poi `analyze_function` (richiede Ghidra configurato) |
 | Assembly .NET                              | `inspect_managed_artifact`, `inspect_managed_members`               |
 | Database SQLite                            | `inspect_sqlite_database`                                           |
-| Rapporto leggibile in italiano (HTML/MD)   | CLI `./scripts/insideapp.sh report <percorso> --authorized`         |
+| Rapporto completo in italiano              | `create_report` (`authorized: true`) / CLI `report --authorized`    |
 
-Per il comando `report` usa `--authorized` solo dopo che l'utente ha
-confermato la liceità (sezione 1). I file vanno in `rapporti-insideapp/`,
-oppure nella cartella indicata con `--output-dir`.
+Per `create_report` (e per il comando `report`) usa `authorized: true`
+(`--authorized`) solo dopo che l'utente ha confermato la liceità (sezione 1).
+
+- Parti da `create_report` quando l'utente vuole capire un'app nel suo insieme:
+  copre app Electron, bundle `.app`, eseguibili Windows, SQLite (solo struttura)
+  e altri file, con le classi Osservato, Derivato, Ipotesi e Sconosciuto.
+- Riporta le Ipotesi come tali e cita le prove.
+- Il comando CLI salva i file in `rapporti-insideapp/` o nella cartella indicata
+  con `--output-dir`.
 
 Per i flussi dettagliati consulta i riferimenti tecnici originali (in inglese)
 in `.agents/skills/reverse-engineer-anything/references/`. Quando citano

@@ -5,9 +5,16 @@ import type {
   ReportEvidenceSet,
   ReportSupplement,
 } from "../application/report/generateReport.js";
-import { analysisCliErrorEnvelopeSchema } from "../contracts/errorSchemas.js";
+import {
+  analysisCliErrorEnvelopeSchema,
+  analysisErrorProjectionSchema,
+} from "../contracts/errorSchemas.js";
+import { AnalysisOutputError } from "../domain/analysisErrorCore.js";
 import type { AnalysisError } from "../domain/analysisErrorBase.js";
-import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
+import {
+  projectAnalysisError,
+  type AnalysisErrorProjection,
+} from "../domain/analysisErrorProjection.js";
 import { artifactInspectionResultSchema } from "../domain/artifactInspection.js";
 import type { Evidence } from "../domain/evidence.js";
 import type { JsonValue } from "../domain/jsonValue.js";
@@ -26,7 +33,32 @@ import { createSqliteDatabaseService } from "./sqlite.js";
 const REPORT_MAX_BUNDLE_ENTRIES = 20_000;
 
 /** One step: completed Evidence JSON, or the projected failure. */
-type Step = Result<JsonValue, JsonValue>;
+type Step = Result<JsonValue, AnalysisErrorProjection>;
+
+/**
+ * The canonical projection of a failed engine call. CLI-style results carry
+ * it inside an `{ error: <label> }` envelope; the label and caller input
+ * echoes are dropped so every adapter receives the same typed projection.
+ */
+export const analysisFailureProjection = (
+  value: JsonValue,
+): AnalysisErrorProjection | undefined => {
+  const direct = analysisErrorProjectionSchema.safeParse(value);
+  if (direct.success) return value as unknown as AnalysisErrorProjection;
+  if (!analysisCliErrorEnvelopeSchema.safeParse(value).success)
+    return undefined;
+  const {
+    error: _label,
+    input_path: _inputPath,
+    input_reason: _inputReason,
+    ...projection
+  } = value as Record<string, JsonValue>;
+  return analysisErrorProjectionSchema.safeParse(projection).success
+    ? (projection as unknown as AnalysisErrorProjection)
+    : projectAnalysisError(
+        new AnalysisOutputError("report", "unrecognized analysis failure"),
+      );
+};
 
 interface ClosableService {
   close(): Promise<void>;
@@ -46,21 +78,13 @@ const serviceStep = async <Service extends ClosableService>(
   }
   return result.ok
     ? ok(result.value as unknown as JsonValue)
-    : err(projectAnalysisError(result.error) as unknown as JsonValue);
+    : err(projectAnalysisError(result.error));
 };
 
-const providerStep = (value: JsonValue): Step =>
-  analysisCliErrorEnvelopeSchema.safeParse(value).success
-    ? err(value)
-    : ok(value);
-
-const failureCode = (failure: JsonValue): string =>
-  typeof failure === "object" &&
-  failure !== null &&
-  !Array.isArray(failure) &&
-  typeof failure.code === "string"
-    ? failure.code
-    : "analysis_failed";
+const providerStep = (value: JsonValue): Step => {
+  const failure = analysisFailureProjection(value);
+  return failure === undefined ? ok(value) : err(failure);
+};
 
 const supplement = async (
   operation: string,
@@ -70,7 +94,7 @@ const supplement = async (
     const step = await run();
     return step.ok
       ? { operation, evidence: step.value }
-      : { operation, failureCode: failureCode(step.error) };
+      : { operation, failureCode: step.error.code };
   } catch {
     return { operation, failureCode: "internal" };
   }
@@ -112,7 +136,7 @@ type ProviderStep = (
 const settle = async (
   primary: Step,
   more: () => Promise<readonly ReportSupplement[]>,
-): Promise<Result<ReportEvidenceSet, JsonValue>> =>
+): Promise<Result<ReportEvidenceSet, AnalysisErrorProjection>> =>
   primary.ok
     ? ok({ primary: primary.value, supplements: await more() })
     : err(primary.error);
@@ -182,7 +206,7 @@ export const createReportAnalysisPorts = ({
   environment,
   logger,
   javascript,
-}: ReportAnalysisDependencies): ReportAnalysisPorts<JsonValue> => {
+}: ReportAnalysisDependencies): ReportAnalysisPorts<AnalysisErrorProjection> => {
   const direct = createDirectAnalysis(environment);
   const providerFor =
     (path: string, signal: AbortSignal): ProviderStep =>

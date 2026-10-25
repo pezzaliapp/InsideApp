@@ -8,7 +8,10 @@ import {
 } from "../application/report/generateReport.js";
 import { ArtifactResourceScope } from "../artifacts/ArtifactResourceScope.js";
 import { createReportAnalysisPorts } from "../composition/reportAnalysis.js";
-import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
+import {
+  projectAnalysisError,
+  type AnalysisErrorProjection,
+} from "../domain/analysisErrorProjection.js";
 import type { JsonValue } from "../domain/jsonValue.js";
 import type { InsideAppReport } from "../domain/report/insideAppReport.js";
 import { err, ok } from "../domain/result.js";
@@ -86,7 +89,7 @@ export class GuiAnalyses {
   }
 
   /** Shared engine operations; only the JavaScript worker belongs to the GUI. */
-  #ports(analysis: GuiAnalysis): ReportAnalysisPorts<JsonValue> {
+  #ports(analysis: GuiAnalysis): ReportAnalysisPorts<AnalysisErrorProjection> {
     const progress = createProgressReporter(
       async (update) => {
         analysis.phase = PHASES[update.message] ?? "Analisi in corso";
@@ -109,7 +112,7 @@ export class GuiAnalyses {
         await this.#scope.retryCleanup();
         return result.ok
           ? ok(result.value as unknown as JsonValue)
-          : err(projectAnalysisError(result.error) as unknown as JsonValue);
+          : err(projectAnalysisError(result.error));
       },
     });
   }

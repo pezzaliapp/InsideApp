@@ -53,7 +53,7 @@ const adapterNeutralPorts = (
       );
       return result.ok
         ? ok(result.value as unknown as JsonValue)
-        : err(projectAnalysisError(result.error) as unknown as JsonValue);
+        : err(projectAnalysisError(result.error));
     },
   });
 };
