@@ -37,6 +37,8 @@ coverage/
 reports/mutation/
 .vitest/
 .vitest-reports/
+# InsideApp report command default output
+rapporti-insideapp/
 test-results.xml
 test-timings.json
 .turbo/

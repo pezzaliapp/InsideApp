@@ -65,6 +65,11 @@ Punti di partenza tipici:
 | Eseguibile nativo, decompilazione          | `open_binary`, poi `analyze_function` (richiede Ghidra configurato) |
 | Assembly .NET                              | `inspect_managed_artifact`, `inspect_managed_members`               |
 | Database SQLite                            | `inspect_sqlite_database`                                           |
+| Rapporto leggibile in italiano (HTML/MD)   | CLI `./scripts/insideapp.sh report <percorso> --authorized`         |
+
+Per il comando `report` usa `--authorized` solo dopo che l'utente ha
+confermato la liceità (sezione 1). I file vanno in `rapporti-insideapp/`,
+oppure nella cartella indicata con `--output-dir`.
 
 Per i flussi dettagliati consulta i riferimenti tecnici originali (in inglese)
 in `.agents/skills/reverse-engineer-anything/references/`. Quando citano

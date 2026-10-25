@@ -53,6 +53,7 @@ import { registerBrowserScenarioCommands } from "./cliBrowserScenarioCommands.js
 import { registerElectronCommands } from "./cli/electronCommands.js";
 import { registerJavaScriptRuntimeObservationCommands } from "./cli/javascriptRuntimeCommands.js";
 import { registerApplicationCommands } from "./cli/applicationCommands.js";
+import { registerReportCommands } from "./cli/reportCommands.js";
 import { presentOmittableDefaults } from "./cli/omittableDefaults.js";
 import type { CliInstance } from "./cli/types.js";
 import {
@@ -165,6 +166,12 @@ export const createCli = (
   registerElectronCommands(cli, logger, environment);
   registerJavaScriptRuntimeObservationCommands(cli, logger, environment);
   registerApplicationCommands(cli, logger);
+  registerReportCommands(
+    cli,
+    logger,
+    environment,
+    analysis.runProviderAnalysis,
+  );
   presentOmittableDefaults(cli);
   if (resultOutput !== undefined) streamCliCommandResults(cli, resultOutput);
   const serveStrict = rejectSurplusCliArguments(cli);

@@ -267,7 +267,10 @@ const routesToJavaScriptAnalysis = async (
   options["entry-point"] === undefined &&
   (await isJavaScriptApplicationPath(path));
 
-const isJavaScriptApplicationPath = async (path: string): Promise<boolean> => {
+/** True for `.asar` files and plain directories that `analyze` routes to JavaScript analysis. */
+export const isJavaScriptApplicationPath = async (
+  path: string,
+): Promise<boolean> => {
   try {
     const canonical = await realpath(path);
     if (canonical.toLowerCase().endsWith(".asar")) return true;

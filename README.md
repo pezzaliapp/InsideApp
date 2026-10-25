@@ -119,6 +119,30 @@ Esempi:
 ./scripts/insideapp.sh inspect-sqlite-database /percorso/db.sqlite --json
 ```
 
+### Rapporto in italiano
+
+Il comando `report` analizza un'applicazione e salva un rapporto leggibile in
+HTML e Markdown nella cartella `rapporti-insideapp/` (esclusa da Git):
+
+```bash
+./scripts/insideapp.sh report /percorso/app --authorized
+./scripts/insideapp.sh report /percorso/app --authorized --only html --output-dir ~/Documenti/rapporti
+```
+
+- `--authorized` è obbligatorio: dichiara che il software è tuo o che sei
+  autorizzato ad analizzarlo (vedi [AVVERTENZE.md](AVVERTENZE.md)).
+- Cartelle e file `.asar` vengono analizzati come applicazioni
+  JavaScript/Electron; gli altri file e i bundle `.app` con l'ispezione
+  generica degli artefatti.
+- Il rapporto è diviso in **In breve**, **Componenti**, **Comunicazioni**,
+  **Dati e file**, **Sicurezza** e **Limiti e sconosciuti**. Ogni affermazione è
+  marcata come **Osservato**, **Derivato**, **Ipotesi** o **Sconosciuto** e
+  riporta la prova: file, riga, SHA-256, Evidence e metodo del motore.
+- La pagina HTML è autonoma: nessuno script, nessuna risorsa esterna, tema chiaro
+  e scuro, stampabile in PDF dal browser. Il percorso della cartella home è
+  mostrato come `~`.
+- Nessuna esecuzione dell'applicazione analizzata e nessuna connessione di rete.
+
 ## Funzionalità
 
 ### Disponibili subito, offline, senza strumenti aggiuntivi

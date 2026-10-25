@@ -55,3 +55,6 @@ conservati integralmente in:
   app di esempio usate dai test sono in `tests/fixtures/examples/`.
 - Strumenti commerciali (Hopper, IDA Pro, JEB) esclusi dalla configurazione e
   dalla documentazione di InsideApp.
+- Nuovo comando `report`: rapporto in italiano (HTML e Markdown) con le
+  affermazioni classificate come Osservato, Derivato, Ipotesi o Sconosciuto
+  (`src/domain/report/`, `src/application/report/`, `src/cli/reportCommands.ts`).
