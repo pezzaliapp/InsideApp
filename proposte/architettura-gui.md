@@ -1,7 +1,7 @@
 # Architettura di InsideApp: modalità autonoma e modalità Claude
 
-Stato: architettura approvata. G0 completato; G1–G5 da autorizzare uno alla
-volta. Sostituisce e dettaglia `proposte/gui-insideapp.md`.
+Stato: architettura approvata. G0 e G1 completati; G2–G5 da autorizzare uno
+alla volta. Sostituisce e dettaglia `proposte/gui-insideapp.md`.
 
 ## 1. Obiettivi e vincoli
 
@@ -215,6 +215,29 @@ I test di confine (sezione 5) devono provare ogni riga della tabella con una
 richiesta reale. Disattivare uno qualsiasi dei controlli deve far fallire
 almeno un test.
 
+### 4.2 Implementazione in G1 (`src/gui/`, comando `gui`)
+
+| Misura                                                                                                             | Dove                                | Test che la dimostra                                                                      |
+| ------------------------------------------------------------------------------------------------------------------ | ----------------------------------- | ----------------------------------------------------------------------------------------- |
+| Ascolto solo su `127.0.0.1`, porta del sistema, verifica dell'indirizzo effettivo                                  | `startGuiServer`                    | `insideappGuiServer.test.ts` (indirizzo e porta), `lsof` nella prova manuale              |
+| Token monouso a 256 bit, 60 secondi, mai in argomenti o log                                                        | `GuiSession`, `writeGuiLauncher`    | riutilizzo e scadenza rifiutati; `ps -axww` e l'output non contengono il token            |
+| File di avvio `0600` in cartella `0700`, dentro `.cache/gui/` del progetto, cancellato prima di emettere il cookie | `guiLauncher.ts`                    | permessi e cancellazione verificati                                                       |
+| Cookie `HttpOnly; SameSite=Strict; Path=/`, scaduto alla chiusura                                                  | `guiSecurity.ts`                    | intestazione esatta; in Chrome `document.cookie` è vuoto                                  |
+| `Host` esatto (DNS rebinding)                                                                                      | `guiRequestRefusal`                 | `localhost`, altri nomi, altre porte, Host senza porta: tutti 403                         |
+| `Origin` esatto, `Sec-Fetch-Site`, intestazione `X-InsideApp-Request` (CSRF e altri siti locali)                   | `guiRequestRefusal`                 | origini estranee, `same-site`, `cross-site`, POST senza Origin, intestazione assente: 403 |
+| Instradamento esatto, nessun file dal disco                                                                        | `ROUTE_METHODS`, risorse in memoria | percorsi con `..`, `%2e%2e`, `/package.json`: 404                                         |
+| Limiti: corpo 4 KB, intestazioni 8 KB, tempi di richiesta, 16 connessioni                                          | `readJsonBody`, `createServer`      | 413, 411, 415, 400, 431, 405                                                              |
+| CSP senza `unsafe-*`, nessuna CORS, intestazioni di sicurezza su ogni risposta                                     | `GUI_SECURITY_HEADERS`              | intestazioni su pagine, risorse e rifiuti; in Chrome nessuna violazione                   |
+| Chiusura: Ctrl+C, pulsante, inattività; porta rilasciata                                                           | `stop`                              | dopo la chiusura la porta rifiuta le connessioni; il processo termina                     |
+
+**Inattività:** il timer riparte a ogni richiesta autenticata. La pagina non
+interroga il server da sola, quindi una scheda dimenticata non tiene acceso il
+server.
+
+**Mutazioni verificate:** disattivando, uno per volta, il controllo di Host,
+di Origin o dell'intestazione dedicata, la verifica della sessione, `HttpOnly`,
+il token monouso o i limiti del corpo, almeno un test fallisce.
+
 ## 5. Piano dei test
 
 Ogni test usa l'host isolato di `tests/fixtures/insideappHost.ts`: home
@@ -249,14 +272,14 @@ estesa per ammettere solo connessioni a `127.0.0.1` sulla porta della GUI.
 
 ## 6. Roadmap (ogni passo si ferma per l'approvazione)
 
-| Passo | Contenuto                                                                                   | Esito verificabile                          |
-| ----- | ------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| G0    | `generateReport` applicativo, instradamento condiviso, CLI adattata, log npm locali (fatto) | test della Fase 0 invariati, parità         |
-| G1    | server GUI sicuro (sessione, Host, Origin, CSRF, CSP, limiti, chiusura); pagina vuota       | test di confine HTTP e mutazioni            |
-| G2    | flusso completo: liceità, scelta, analisi, rapporto, esportazione                           | test di flusso, parità ed effetti sull'host |
-| G3    | avanzamento, annullamento, formati prioritari (sotto)                                       | rapporti sulle fixture di ciascun tipo      |
-| G4    | modalità Claude: testo per Claude Code; strumento MCP `create_report` sullo stesso servizio | test MCP e catalogo a 228 strumenti         |
-| G5    | sito statico su `insideapp.pezzalihub.app` (Cloudflare Free)                                | sito pubblicato dopo la tua approvazione    |
+| Passo | Contenuto                                                                                        | Esito verificabile                          |
+| ----- | ------------------------------------------------------------------------------------------------ | ------------------------------------------- |
+| G0    | `generateReport` applicativo, instradamento condiviso, CLI adattata, log npm locali (fatto)      | test della Fase 0 invariati, parità         |
+| G1    | server GUI sicuro (sessione, Host, Origin, CSRF, CSP, limiti, chiusura); pagina iniziale (fatto) | test di confine HTTP e mutazioni            |
+| G2    | flusso completo: liceità, scelta, analisi, rapporto, esportazione                                | test di flusso, parità ed effetti sull'host |
+| G3    | avanzamento, annullamento, formati prioritari (sotto)                                            | rapporti sulle fixture di ciascun tipo      |
+| G4    | modalità Claude: testo per Claude Code; strumento MCP `create_report` sullo stesso servizio      | test MCP e catalogo a 228 strumenti         |
+| G5    | sito statico su `insideapp.pezzalihub.app` (Cloudflare Free)                                     | sito pubblicato dopo la tua approvazione    |
 
 ### 6.1 Formati prioritari: cosa fa oggi `report` e cosa serve (verificato su fixture)
 

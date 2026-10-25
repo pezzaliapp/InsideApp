@@ -58,3 +58,6 @@ conservati integralmente in:
 - Nuovo comando `report`: rapporto in italiano (HTML e Markdown) con le
   affermazioni classificate come Osservato, Derivato, Ipotesi o Sconosciuto
   (`src/domain/report/`, `src/application/report/`, `src/cli/reportCommands.ts`).
+- Servizio condiviso `generateReport` per CLI, interfaccia e MCP.
+- Interfaccia locale `gui` (`src/gui/`): server su 127.0.0.1 con sessione
+  monouso, cookie HttpOnly, controlli Host/Origin/CSRF e CSP rigida.

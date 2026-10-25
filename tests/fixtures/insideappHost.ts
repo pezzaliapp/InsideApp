@@ -39,7 +39,8 @@ net.Socket.prototype.connect = function (...args) {
 const dns = require("node:dns");
 for (const name of ["lookup", "resolve", "resolve4", "resolve6"]) {
   const original = dns[name];
-  dns[name] = function (host, ...rest) { record("dns", { host }); return original.call(this, host, ...rest); };
+  // IP literals resolve inside Node without a resolver query (dns.lookup returns them directly).
+  dns[name] = function (host, ...rest) { if (!net.isIP(String(host))) record("dns", { host }); return original.call(this, host, ...rest); };
 }
 const dgram = require("node:dgram");
 const createSocket = dgram.createSocket;

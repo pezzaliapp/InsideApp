@@ -54,6 +54,7 @@ import { registerElectronCommands } from "./cli/electronCommands.js";
 import { registerJavaScriptRuntimeObservationCommands } from "./cli/javascriptRuntimeCommands.js";
 import { registerApplicationCommands } from "./cli/applicationCommands.js";
 import { registerReportCommands } from "./cli/reportCommands.js";
+import { registerGuiCommands } from "./cli/guiCommands.js";
 import { presentOmittableDefaults } from "./cli/omittableDefaults.js";
 import type { CliInstance } from "./cli/types.js";
 import {
@@ -172,6 +173,7 @@ export const createCli = (
     environment,
     analysis.runProviderAnalysis,
   );
+  registerGuiCommands(cli, logger);
   presentOmittableDefaults(cli);
   if (resultOutput !== undefined) streamCliCommandResults(cli, resultOutput);
   const serveStrict = rejectSurplusCliArguments(cli);

@@ -143,6 +143,21 @@ HTML e Markdown nella cartella `rapporti-insideapp/` (esclusa da Git):
   mostrato come `~`.
 - Nessuna esecuzione dell'applicazione analizzata e nessuna connessione di rete.
 
+### Interfaccia locale (anteprima)
+
+```bash
+./scripts/insideapp.sh gui                 # apre il browser predefinito
+./scripts/insideapp.sh gui --no-browser    # stampa solo il file di avvio
+./scripts/insideapp.sh gui --idle-timeout-minutes 60
+```
+
+- **Cosa offre:** per ora la pagina mostra lo stato del motore e le due modalità, autonoma e Claude Code. La scelta dell'applicazione e l'analisi dall'interfaccia arriveranno nella prossima versione; nel frattempo usa `report`.
+- **Dove ascolta:** solo su `127.0.0.1`, su una porta scelta dal sistema. Non è raggiungibile da altri dispositivi della rete e non richiede di aprire il firewall.
+- **Come si accede:** a ogni avvio InsideApp scrive un file di avvio in `.cache/gui/`, leggibile solo dal tuo utente. Il file contiene un codice monouso valido 60 secondi, che non compare mai nel terminale né negli argomenti dei processi. Il browser lo scambia con un cookie di sessione `HttpOnly` e `SameSite=Strict`.
+- **Altri controlli:** ogni richiesta deve avere `Host` e `Origin` esatti e un'intestazione dedicata, contro gli attacchi DNS rebinding e CSRF. La pagina ha una Content Security Policy rigida e non carica risorse esterne.
+- **Come si chiude:** con Ctrl+C, con il pulsante «Chiudi InsideApp» oppure dopo 30 minuti senza attività (valore modificabile con `--idle-timeout-minutes`).
+- **Limite:** un programma ostile che gira con il tuo stesso utente può leggere i tuoi file e il profilo del browser. Nessun server locale può proteggersi da lui, e InsideApp non dichiara di farlo.
+
 ## Funzionalità
 
 ### Disponibili subito, offline, senza strumenti aggiuntivi
