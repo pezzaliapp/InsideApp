@@ -232,7 +232,10 @@
               <p>
                 L'interfaccia si apre nel browser del tuo Mac con
                 <code>./scripts/insideapp.sh gui</code> e funziona solo su
-                questo computer. Lo stesso rapporto è disponibile anche da
+                questo computer. Crea il rapporto e, con Ghidra installato,
+                esplora il codice nella sezione Reverse Engineering: funzioni,
+                disassemblaggio, pseudocodice, flusso di controllo, riferimenti,
+                stringhe e rapporto tecnico. Il rapporto è disponibile anche da
                 terminale con <code>./scripts/insideapp.sh report</code>.
               </p>
               <p>
@@ -249,10 +252,13 @@
                   >Claude Code</a
                 >
                 può collegarlo al server MCP del progetto
-                (<code>.mcp.json</code>): lo strumento
-                <code>create_report</code> produce lo stesso rapporto. La
-                configurazione resta nella cartella del progetto, senza
-                modifiche globali.
+                (<code>.mcp.json</code>), dopo averlo approvato in Claude Code.
+                Claude Code usa così gli strumenti di analisi statica del
+                motore, compreso <code>create_report</code> e, con Ghidra
+                installato, funzioni, disassemblaggio e decompilazione. Lavora
+                nel proprio ambiente, fuori dall'interfaccia di InsideApp, sotto
+                il tuo controllo. La configurazione resta nella cartella del
+                progetto, senza modifiche globali.
               </p>
               <p>
                 Claude Code richiede un proprio abbonamento: il testo che gli
