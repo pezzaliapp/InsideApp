@@ -15,7 +15,7 @@ Dettagli in [NOTICE.md](NOTICE.md).
 
 > [!IMPORTANT]
 > Usa InsideApp solo su software di tua proprietà o che sei autorizzato ad
-> analizzare. Leggi le [avvertenze d'uso](AVVERTENZE.md) prima di iniziare.
+> analizzare. Leggi l'[avvertenza sull'utilizzo](AVVERTENZE.md) prima di iniziare.
 
 ## Principi
 
