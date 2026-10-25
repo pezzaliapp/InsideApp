@@ -109,6 +109,43 @@ export const GUI_APP_HTML = page(
 </div>
 </section>
 
+<section class="card no-print native" id="native" aria-labelledby="native-title">
+<h2 id="native-title">Reverse Engineering</h2>
+<p>Esplora il codice di un programma (Windows .exe e .dll, macOS Mach-O, Linux ELF) con Ghidra, un motore gratuito e open source che gira su questo computer. Il programma viene letto, mai eseguito né modificato. Usa l'elemento scelto al passo 1 e la stessa dichiarazione di autorizzazione.</p>
+<p id="native-engine" class="state"></p>
+<div class="actions"><button type="button" id="native-start" class="primary" disabled>Avvia il reverse engineering</button><button type="button" id="native-cancel" hidden>Annulla</button><button type="button" id="native-close" hidden>Chiudi l'analisi</button></div>
+<p id="native-phase" class="state" aria-live="polite"></p>
+<p id="native-error" class="state error" role="alert"></p>
+<div id="native-result" hidden>
+<dl id="native-facts" class="facts"></dl>
+<div class="native-layout">
+<div class="native-side">
+<h3>Funzioni</h3>
+<label class="filter">Cerca <input type="search" id="native-filter" autocomplete="off" spellcheck="false"></label>
+<ul id="native-functions" class="native-items"></ul>
+<p id="native-functions-note" class="note"></p>
+<h3>Stringhe</h3>
+<ul id="native-strings" class="native-items"></ul>
+<p id="native-strings-note" class="note"></p>
+</div>
+<div class="native-main">
+<p class="note" id="native-hint">Seleziona una funzione per vederne spiegazione, pseudocodice, disassemblaggio e flusso di controllo.</p>
+<div id="native-function" hidden>
+<h3 id="native-function-title"></h3>
+<p id="native-function-meta" class="note"></p>
+<div class="tabs" role="tablist" aria-label="Vista della funzione">
+<button type="button" role="tab" data-tab="explain" aria-selected="true">Spiegazione</button><button type="button" role="tab" data-tab="pseudo" aria-selected="false">Pseudocodice</button><button type="button" role="tab" data-tab="asm" aria-selected="false">Disassemblaggio</button><button type="button" role="tab" data-tab="flow" aria-selected="false">Flusso di controllo</button><button type="button" role="tab" data-tab="refs" aria-selected="false">Chiamate e riferimenti</button>
+</div>
+<div id="native-panel" role="tabpanel"></div>
+</div>
+</div>
+</div>
+<div class="actions"><button type="button" id="native-export-md">Scarica rapporto tecnico (Markdown)</button><button type="button" id="native-export-html">Scarica rapporto tecnico (HTML)</button></div>
+<p class="note">Il rapporto tecnico contiene panoramica, segmenti e le funzioni che hai aperto, senza il percorso del file. Il pseudocodice è una ricostruzione del decompilatore di Ghidra, non il sorgente originale.</p>
+</div>
+<script src="/assets/native.js" defer></script>
+</section>
+
 <div class="modes no-print">
 <section class="card mode" aria-labelledby="engine-title">
 <div class="card-head"><h2 id="engine-title">Stato del motore</h2><button type="button" id="refresh">Aggiorna</button></div>
@@ -188,6 +225,25 @@ footer{margin-top:28px;color:var(--muted);font-size:.85rem}
 .setup{margin:8px 0;padding-left:22px}
 .consent{border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:8px;padding:10px 14px;margin-top:8px}
 textarea{width:100%;min-height:160px;font:.85rem ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px}
+.native-layout{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:16px;margin-top:12px}
+@media (max-width:760px){.native-layout{grid-template-columns:1fr}}
+.native-side h3,.native-main h3{font-size:1.05rem;margin:8px 0 6px}
+.filter{display:flex;gap:8px;align-items:center;margin:0 0 6px}.filter input{flex:1;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg)}
+.native-items{list-style:none;padding:0;margin:0;max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.native-items li{border-bottom:1px solid var(--line)}.native-items li:last-child{border-bottom:0}
+.native-items button{width:100%;text-align:left;border:0;border-radius:0;background:transparent;padding:6px 10px;display:flex;gap:8px;align-items:baseline}
+.native-items button[aria-current="true"]{background:var(--accent);color:var(--accent-fg)}
+.native-items .addr{font:.8rem ui-monospace,Menlo,monospace;color:var(--muted)}.native-items button[aria-current="true"] .addr{color:inherit}
+.native-items .ext{padding:6px 10px;color:var(--muted);font-size:.9rem}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.tabs button[aria-selected="true"]{border-color:var(--accent);color:var(--accent);font-weight:700}
+pre.code{overflow:auto;max-height:520px;margin:0;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font:.85rem/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre}
+.block{border:1px solid var(--line);border-radius:8px;margin:0 0 10px;overflow:hidden}
+.block-head{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:6px 10px;background:var(--bg);font:.85rem ui-monospace,Menlo,monospace}
+.block pre{margin:0;padding:8px 10px;font:.82rem/1.4 ui-monospace,Menlo,monospace;overflow:auto}
+.tag{font:700 .7rem -apple-system,system-ui,sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:1px 6px;border-radius:999px;border:1px solid currentColor}
+.tag.branch{color:var(--derived)}.tag.loop{color:var(--hypothesis)}.tag.exit{color:var(--muted)}
+.linkish{border:0;background:none;padding:0;color:var(--accent);text-decoration:underline;cursor:pointer}
 @media print{.no-print,footer,.brand .tagline{display:none!important}body{background:#fff;color:#000}main{padding:0}.card{border:0;padding:0}details{display:block}details>summary{display:none}.hidden-kind{display:block}}
 `;
 
@@ -277,6 +333,7 @@ export const GUI_APP_JS = `"use strict";
       const result = await response.json();
       if (result.outcome === "selected") {
         state.target = result.target;
+        document.dispatchEvent(new CustomEvent("insideapp:target", { detail: result.target }));
         byId("target").textContent = "Scelto: " + result.target.name + " — " + targetLabel(result.target) + ".";
         steps("analyze");
       } else {

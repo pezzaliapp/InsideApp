@@ -27,6 +27,9 @@ import {
   guiSessionCookieHeader,
 } from "./guiSecurity.js";
 import type { GuiSession } from "./guiSession.js";
+import type { GuiNative } from "./guiNative.js";
+import { NATIVE_API_ROUTES } from "./guiNativeApi.js";
+import { failureMessage } from "./guiFailures.js";
 import { guiEngineStatus } from "./guiStatus.js";
 import {
   guiTargetView,
@@ -45,6 +48,8 @@ export interface GuiContext {
   readonly session: GuiSession;
   readonly targets: GuiTargets;
   readonly analyses: GuiAnalyses;
+  /** Static native-code exploration with Ghidra, one target at a time. */
+  readonly native: GuiNative;
   readonly picker: GuiPicker;
   readonly pickerSignal: AbortSignal;
   readonly now: () => number;
@@ -55,7 +60,7 @@ export interface GuiContext {
 }
 
 /** One admitted API request; `id` is the opaque identifier in the path, if any. */
-interface ApiCall {
+export interface ApiCall {
   readonly context: GuiContext;
   readonly request: IncomingMessage;
   readonly response: ServerResponse;
@@ -63,26 +68,7 @@ interface ApiCall {
   readonly id: string | undefined;
 }
 
-type Handler = (call: ApiCall) => Promise<void>;
-
-/** Italian, path-free explanations; engine messages may name local paths. */
-const failureMessage = ({ code, category }: GuiAnalysisFailure): string => {
-  if (category === "unsupported_target" || code === "unsupported_target")
-    return "Questo elemento non è supportato in questa versione. InsideApp analizza app Electron (cartelle o file .asar) e ispeziona eseguibili, archivi e bundle .app.";
-  if (category === "invalid_input")
-    return "L'elemento non è leggibile nel formato previsto: potrebbe essere danneggiato o di un altro tipo.";
-  if (code === "access_denied")
-    return "InsideApp non ha il permesso di leggere l'elemento scelto.";
-  if (code === "capability_unavailable")
-    return "Questa analisi non è disponibile su questo computer: su Windows richiede i controlli nativi di InsideApp (vedi il README). Eseguibili, archivi e altri file restano analizzabili.";
-  if (category === "unavailable")
-    return "L'elemento scelto non è stato trovato o non è leggibile.";
-  if (code === "resource_constraint")
-    return "L'elemento supera i limiti di analisi di questa versione.";
-  if (code === "artifact_integrity_mismatch")
-    return "L'integrità dichiarata di un componente non corrisponde ai byte letti: l'analisi si è fermata.";
-  return `L'analisi non è riuscita (codice ${code}).`;
-};
+export type Handler = (call: ApiCall) => Promise<void>;
 
 const analysisView = (context: GuiContext, analysis: GuiAnalysis) => ({
   id: analysis.id,
@@ -239,13 +225,15 @@ const exportReport =
 
 const ID = "([A-Za-z0-9_-]{22})";
 
-/** Exact API routes; ids are 128-bit opaque values minted by this process. */
-const API_ROUTES: readonly {
+export interface ApiRoute {
   readonly pattern: RegExp;
   readonly method: "GET" | "POST";
   readonly session: boolean;
   readonly handle: Handler;
-}[] = [
+}
+
+/** Exact API routes; ids are 128-bit opaque values minted by this process. */
+const API_ROUTES: readonly ApiRoute[] = [
   {
     pattern: /^\/api\/session$/u,
     method: "POST",
@@ -301,6 +289,7 @@ const API_ROUTES: readonly {
     session: true,
     handle: exportReport("markdown"),
   },
+  ...NATIVE_API_ROUTES,
 ];
 
 /** Route one admitted API request: 404 unknown path, 405 wrong method, 401 without session. */

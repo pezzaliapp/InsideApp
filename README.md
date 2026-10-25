@@ -289,9 +289,58 @@ HTML e Markdown nella cartella `rapporti-insideapp/` (esclusa da Git):
 | Disassemblaggio                          | GNU objdump, Rizin                                                                                  |
 | WebAssembly                              | WABT                                                                                                |
 
-InsideApp non scarica né installa questi strumenti: li installi tu e li indichi
-con le variabili descritte nella documentazione tecnica (ad esempio
-`GHIDRA_INSTALL_DIR`).
+InsideApp non scarica né installa questi strumenti da solo: li installi tu e li
+indichi con le variabili descritte nella documentazione tecnica (ad esempio
+`GHIDRA_INSTALL_DIR`). Per Ghidra c'è lo script descritto sotto, che lanci tu.
+
+### Reverse engineering nell'interfaccia (Ghidra)
+
+La sezione **Reverse Engineering** dell'interfaccia esplora il codice di un
+programma con Ghidra, in locale e senza Claude Code: funzioni individuate,
+disassemblaggio, pseudocodice del decompilatore, flusso di controllo per
+blocchi base, chiamate, chiamanti, stringhe con le funzioni che le usano, e un
+rapporto tecnico in Markdown o HTML. Ogni affermazione della spiegazione è
+marcata come Osservato, Derivato, Ipotesi o Sconosciuto. Il programma viene
+importato da Ghidra in un progetto temporaneo: non viene mai eseguito né
+modificato.
+
+**Installazione di Ghidra (una volta):**
+
+```bash
+./scripts/install-ghidra.sh
+./scripts/insideapp.sh doctor
+```
+
+Lo script, senza privilegi e senza modifiche globali:
+
+- scarica la release ufficiale di Ghidra 12.1.4 dal repository della NSA
+  (licenza Apache-2.0, circa 570 MB) e ne verifica l'impronta SHA-256;
+- la estrae in `~/.insideapp/tools/`;
+- su macOS compila il decompilatore nativo dai sorgenti inclusi nella release,
+  con gli Strumenti da riga di comando di Xcode, perché la release non lo
+  include più per macOS;
+- usa un JDK 21 o successivo già installato (non installa Java: se manca,
+  installane uno gratuito, ad esempio Eclipse Temurin);
+- scrive `~/.insideapp/ghidra.env`, letto da `./scripts/insideapp.sh`.
+
+**Stato delle piattaforme:**
+
+| Sistema             | Stato                                                                                                                                                                                      |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| macOS Apple Silicon | Verificato con `normal.exe` di Corkami (PE x86) e con un programma di prova compilato in locale (`tests/fixtures/reverse/sample.c`, Mach-O arm64), confrontando i risultati con i sorgenti |
+| macOS Intel         | Previsto dallo script, non verificato                                                                                                                                                      |
+| Linux x86_64        | Previsto dallo script (decompilatore incluso nella release), non verificato                                                                                                                |
+| Windows             | Non disponibile: lo script è per macOS e Linux, e Ghidra su Windows richiede i controlli nativi di REA (vedi la sezione Windows)                                                           |
+
+**Limiti:** il pseudocodice è una ricostruzione del decompilatore, non il
+sorgente originale; nomi di variabili e tipi possono essere generici. Codice
+offuscato, compresso o cifrato, salti indiretti e codice generato a runtime
+possono sfuggire all'analisi statica. Il comportamento in esecuzione non è
+determinabile. La prima apertura di un programma richiede l'analisi completa
+di Ghidra (pochi secondi per programmi piccoli, molto di più per programmi
+grandi); le domande successive riusano la stessa sessione. Gli elenchi sono
+limitati a 5.000 funzioni e 2.000 stringhe. Il reverse engineering è lecito
+solo se hai i diritti necessari: vedi [AVVERTENZE.md](AVVERTENZE.md).
 
 ### Non disponibili o escluse
 

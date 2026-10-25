@@ -24,4 +24,15 @@ if [ ! -x "$node" ]; then
   exit 1
 fi
 
+# Ghidra configured by scripts/install-ghidra.sh, unless already selected.
+ghidra_env="${INSIDEAPP_HOME:-$HOME/.insideapp}/ghidra.env"
+if [ -f "$ghidra_env" ]; then
+  while IFS='=' read -r key value; do
+    case "$key" in
+      GHIDRA_INSTALL_DIR) [ -n "${GHIDRA_INSTALL_DIR:-}" ] || export GHIDRA_INSTALL_DIR="$value" ;;
+      JAVA_HOME) [ -n "${JAVA_HOME:-}" ] || export JAVA_HOME="$value" ;;
+    esac
+  done <"$ghidra_env"
+fi
+
 exec "$node" "$root/scripts/rea.mjs" "$@"

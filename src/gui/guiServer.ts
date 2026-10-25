@@ -19,6 +19,8 @@ import {
   GUI_START_JS,
 } from "./guiAssets.js";
 import { HTML_TYPE, JSON_TYPE, json, replier } from "./guiHttp.js";
+import { GuiNative } from "./guiNative.js";
+import { GUI_NATIVE_JS } from "./guiNativeAssets.js";
 import { writeGuiLauncher, type GuiLauncher } from "./guiLauncher.js";
 import {
   GUI_HOST,
@@ -66,6 +68,10 @@ const PAGES: Readonly<
   },
   "/assets/app.js": {
     body: GUI_APP_JS,
+    type: "text/javascript; charset=utf-8",
+  },
+  "/assets/native.js": {
+    body: GUI_NATIVE_JS,
     type: "text/javascript; charset=utf-8",
   },
   "/avvio": { body: GUI_START_HTML, type: HTML_TYPE },
@@ -167,6 +173,11 @@ export const startGuiServer = async (
     options.logger ?? createLogger("cli", "silent"),
     now,
   );
+  const native = new GuiNative(
+    options.environment ?? {},
+    options.logger ?? createLogger("cli", "silent"),
+    now,
+  );
   const picker = new AbortController();
   let resolveStopped!: (reason: GuiStopReason) => void;
   const stopped = new Promise<GuiStopReason>((resolve) => {
@@ -187,8 +198,9 @@ export const startGuiServer = async (
       session.end();
       picker.abort();
       await closeServer(server);
-      // Running work is cancelled and awaited; the worker is released.
+      // Running work is cancelled and awaited; the worker and Ghidra are released.
       await analyses.close();
+      await native.close();
       await launcher.remove();
       resolveStopped(reason);
       return reason;
@@ -207,6 +219,7 @@ export const startGuiServer = async (
     session,
     targets: new GuiTargets(),
     analyses,
+    native,
     picker: options.picker ?? systemPicker,
     pickerSignal: picker.signal,
     now,

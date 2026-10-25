@@ -210,10 +210,15 @@
             </table>
           </div>
           <p class="note">
-            La decompilazione del codice nativo richiede un motore esterno
-            gratuito come
+            <strong>Reverse engineering del codice nativo.</strong> Con
             <a href="https://github.com/NationalSecurityAgency/ghidra">Ghidra</a
-            >, da installare a parte: non fa parte dei rapporti.
+            >, motore gratuito e open source installato con
+            <code>./scripts/install-ghidra.sh</code>, la sezione Reverse
+            Engineering dell'interfaccia mostra funzioni individuate,
+            disassemblaggio, pseudocodice del decompilatore, flusso di
+            controllo, chiamate e stringhe di file .exe, .dll, Mach-O ed ELF.
+            Verificato su macOS Apple Silicon; il programma non viene mai
+            eseguito.
           </p>
         </div>
       </section>
@@ -385,6 +390,16 @@ npm run build:cached</code></pre>
             con il pulsante «Chiudi InsideApp» o con Ctrl+C nel Terminale. Per
             aggiornare: <code>git pull</code>, poi ripeti il passo 3.
           </p>
+          <h3>Facoltativo: Ghidra per il reverse engineering</h3>
+          <pre><code>./scripts/install-ghidra.sh
+./scripts/insideapp.sh doctor</code></pre>
+          <p>
+            Scarica la release ufficiale di Ghidra (circa 570 MB) e ne verifica
+            l'impronta, la estrae in <code>~/.insideapp/tools/</code> e su macOS
+            ne compila il decompilatore con gli Strumenti da riga di comando di
+            Xcode. Serve un JDK 21 o successivo già installato, ad esempio
+            Eclipse Temurin.
+          </p>
           <h3>Facoltativo: Claude Code</h3>
           <p>
             Avvia <code>claude</code> dalla cartella <code>~/InsideApp</code>,
@@ -461,9 +476,11 @@ npm run build:cached</code></pre>
           <details>
             <summary>Può decompilare un programma?</summary>
             <p>
-              I rapporti si limitano all'analisi strutturale. Il motore può
-              collegarsi a strumenti gratuiti come Ghidra, da installare a
-              parte, per analisi più profonde da terminale o con Claude Code.
+              Sì, con Ghidra, gratuito e open source, installato con
+              <code>./scripts/install-ghidra.sh</code>: la sezione Reverse
+              Engineering mostra pseudocodice, disassemblaggio e flusso di
+              controllo delle funzioni. Il pseudocodice è una ricostruzione, non
+              il sorgente originale. Verificato su macOS Apple Silicon.
             </p>
           </details>
           <details>

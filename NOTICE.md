@@ -77,3 +77,9 @@ conservati integralmente in:
   launcher `scripts\insideapp.cmd`, finestra di scelta e apertura del browser
   native, regole dei percorsi Windows (vedi
   `proposte/compatibilita-windows.md`).
+- Sezione Reverse Engineering dell'interfaccia: sessione Ghidra persistente
+  sul motore REA, viste di funzioni, disassemblaggio, pseudocodice, flusso di
+  controllo, chiamate e stringhe, rapporto tecnico; script
+  `scripts/install-ghidra.sh` che scarica la release ufficiale di Ghidra
+  (Apache-2.0, non redistribuita da InsideApp) e su macOS ne compila il
+  decompilatore dai sorgenti inclusi.
