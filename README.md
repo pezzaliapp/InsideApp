@@ -308,40 +308,47 @@ con le variabili descritte nella documentazione tecnica (ad esempio
 
 Tutte le analisi statiche sono offline. Usano la rete solo le funzioni che
 tu chiedi esplicitamente di rivolgere a un sito o a un servizio: analisi e
-screenshot di pagine web, recupero di source map remote, `environment-serve`
+screenshot di pagine web (con il consenso per l'analisi dinamica, vedi sotto),
+recupero di source map remote, `environment-serve`
 (server HTTP locale) e `data/add` con un URL https. Usale solo su siti e
 servizi che sei autorizzato ad analizzare.
 
 ### Analisi dinamica: disattivata per impostazione predefinita
 
 I rapporti, l'interfaccia e `create_report` usano solo analisi statiche. Il
-motore offre però anche strumenti dinamici che possono avviare o strumentare
-programmi, usare un debugger, guidare un browser o un'app, o modificare un
-dispositivo Android collegato:
+motore offre però anche strumenti dinamici, che InsideApp rifiuta finché non
+lo avvii tu con un consenso esplicito:
 
-- debugger e console: `cutter_command`, `execute_rizin_command`,
-  `start_rizin_debug_session`, `rizin_debug_command`,
-  `close_rizin_debug_session`, `gdb_console`, `close_gdb_session`;
-- Frida: `instrument_with_frida`, `start_frida_session`, `load_frida_script`,
-  `resume_frida_session`, `unload_frida_script`, `close_frida_session`;
-- scenari e osservazioni dinamiche: `capture_process_scenario`,
-  `capture_electron_scenario`, `capture_browser_scenario`,
-  `capture_native_ui_scenario`, `observe_native_calls`,
-  `observe_web_execution`;
-- dispositivi Android: `push_adb_file`, `install_adb_package`,
-  `uninstall_adb_package`, `start_adb_app`, `start_adb_activity`,
-  `stop_adb_app`.
+- **esecuzione e strumentazione:** debugger e console (Rizin, Cutter, GDB),
+  sessioni Frida, scenari che avviano programmi, app Electron, browser o
+  interfacce (`capture_process_scenario`, `capture_electron_scenario`,
+  `capture_browser_scenario`, `capture_native_ui_scenario`,
+  `observe_native_calls`, `observe_web_execution`);
+- **osservazione di ciò che è in esecuzione:** interfaccia di un'app macOS
+  (`observe_native_ui`), runtime Node/Electron tramite V8 Inspector, app
+  Electron e pagine di un browser aperto tramite DevTools Protocol (elenco,
+  ispezione, sessioni, screenshot, listener), processi e dispositivi Frida;
+- **dispositivi Android:** ogni operazione che contatta un dispositivo tramite
+  adb, in lettura (elenco, proprietà, pacchetti, file, log, schermate,
+  bugreport, impostazioni) o in modifica (installazione, avvio, arresto,
+  invio di file).
+
+L'elenco completo, 60 strumenti, è in
+[`src/dynamicAnalysisPolicy.ts`](src/dynamicAnalysisPolicy.ts). Resta libero
+`inspect_adb_client`, che legge solo il programma adb locale.
 
 La dichiarazione di autorizzazione all'analisi statica non li copre: InsideApp
-li rifiuta, da terminale e da Claude Code, finché non lo avvii tu con
+li rifiuta, da terminale e da Claude Code, finché non lo avvii con
 `INSIDEAPP_ALLOW_DYNAMIC_ANALYSIS=1`, ad esempio
-`INSIDEAPP_ALLOW_DYNAMIC_ANALYSIS=1 ./scripts/insideapp.sh capture-process scenario.json`
+`INSIDEAPP_ALLOW_DYNAMIC_ANALYSIS=1 ./scripts/insideapp.sh read-adb-logcat …`
 oppure `INSIDEAPP_ALLOW_DYNAMIC_ANALYSIS=1 claude` dalla cartella del progetto.
-La scelta vale solo per quel processo e non si può cambiare da una richiesta
-MCP. Usali solo su software e dispositivi tuoi o autorizzati, in un ambiente
-isolato: possono eseguire il programma analizzato con i permessi del tuo
-utente e usare la rete. Quasi tutti richiedono strumenti da installare a parte
-(Rizin, Cutter, GDB, Frida, adb, un browser).
+Il consenso vale solo per quel processo, non viene salvato e non si può
+cambiare da una richiesta MCP. Usali solo su software, account e dispositivi
+tuoi o autorizzati, in un ambiente isolato: possono eseguire il programma
+analizzato con i permessi del tuo utente, leggere dati personali (log,
+schermate, file) e usare la rete. Quasi tutti richiedono strumenti da
+installare a parte (Rizin, Cutter, GDB, Frida, adb, un browser avviato con il
+debug remoto).
 
 ## Privacy
 

@@ -55,7 +55,7 @@ const markerScenario = (marker: string) => ({
   timeout_ms: 20_000,
 });
 
-describe("InsideApp dynamic analysis policy", () => {
+describe("InsideApp dynamic analysis policy coverage", () => {
   it("covers every operation that runs foreign code or changes a device", () => {
     const required = Object.entries(TOOL_EFFECTS)
       .filter(
@@ -69,9 +69,13 @@ describe("InsideApp dynamic analysis policy", () => {
     for (const name of DYNAMIC_ANALYSIS_TOOLS) {
       expect(names.has(name), name).toBe(true);
       const effects = TOOL_EFFECTS[name]!;
-      expect(effects.launchesProcess || effects.accessesNetwork, name).toBe(
-        true,
-      );
+      // Session status reads only the state of a session gated when started.
+      expect(
+        effects.launchesProcess ||
+          effects.accessesNetwork ||
+          name.endsWith("_session_status"),
+        name,
+      ).toBe(true);
     }
     // Reports and the GUI use only static operations.
     for (const name of [
@@ -89,27 +93,60 @@ describe("InsideApp dynamic analysis policy", () => {
       expect(DYNAMIC_ANALYSIS_TOOLS.has(name), name).toBe(false);
       expect(TOOL_EFFECTS[name]!.executesForeignCode, name).toBe(false);
     }
-    expect([...DYNAMIC_ANALYSIS_CLI_COMMANDS].sort()).toEqual([
-      "capture-browser-scenario",
-      "capture-electron-scenario",
-      "capture-native-ui-scenario",
+    // Every CLI command whose operation is gated, by name or alias.
+    expect(DYNAMIC_ANALYSIS_CLI_COMMANDS.size).toBe(48);
+    for (const command of [
       "capture-process",
-      "cutter-command",
       "debug-with-gdb",
-      "debug-with-rizin",
-      "execute-rizin-command",
-      "install-adb-package",
-      "instrument-with-frida",
-      "observe-native-calls",
-      "observe-web-execution",
-      "push-adb-file",
-      "start-adb-activity",
-      "start-adb-app",
-      "stop-adb-app",
-      "uninstall-adb-package",
-    ]);
+      "observe-native-ui",
+      "observe-javascript-runtime",
+      "list-frida-processes",
+      "read-adb-logcat",
+      "capture-adb-screen",
+      "pull-adb-file",
+      "capture-web-screenshot",
+    ])
+      expect(DYNAMIC_ANALYSIS_CLI_COMMANDS.has(command), command).toBe(true);
   });
 
+  it("covers passive observation of running processes, pages and devices", () => {
+    // Inputs that select a live process, page, runtime or device.
+    const liveInputs = new Set([
+      "pid",
+      "serial",
+      "device_id",
+      "window_id",
+      "cdp_endpoint",
+      "inspector_endpoint",
+    ]);
+    for (const contract of TOOL_CONTRACTS) {
+      const keys = Object.keys(
+        (contract.inputSchema as { shape?: object }).shape ?? {},
+      );
+      const live =
+        keys.some((key) => liveInputs.has(key)) ||
+        (contract.kind === "adb-provider" &&
+          contract.name !== "inspect_adb_client");
+      if (live)
+        expect(DYNAMIC_ANALYSIS_TOOLS.has(contract.name), contract.name).toBe(
+          true,
+        );
+    }
+    // Static analysis of files stays available without consent.
+    for (const name of [
+      "inspect_adb_client",
+      "inspect_apk_signature",
+      "inspect_electron_fuses",
+      "export_web_scripts",
+      "inspect_web_network_capture",
+      "reconcile_javascript_runtime",
+      "inspect_recorded_crash",
+    ])
+      expect(DYNAMIC_ANALYSIS_TOOLS.has(name), name).toBe(false);
+  });
+});
+
+describe("InsideApp dynamic analysis enforcement", () => {
   it(
     "refuses every dynamic CLI command before it runs, unless the user allows it",
     async () => {
@@ -176,6 +213,15 @@ describe("InsideApp dynamic analysis policy", () => {
       expect(device.isError).toBe(true);
       expect(
         JSON.parse((device.content as { text: string }[])[0]!.text),
+      ).toMatchObject({ error: { code: "capability_unavailable" } });
+      // Passive observation of a device is gated as well.
+      const devices = await client.callTool({
+        name: "list_adb_devices",
+        arguments: {},
+      });
+      expect(devices.isError).toBe(true);
+      expect(
+        JSON.parse((devices.content as { text: string }[])[0]!.text),
       ).toMatchObject({ error: { code: "capability_unavailable" } });
       expect(existsSync(marker)).toBe(false);
       await client.close();

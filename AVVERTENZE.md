@@ -63,8 +63,9 @@ pubblica non costituiscono di per sé un'autorizzazione.
 
 Alcune funzioni avviano o osservano programmi, aprono browser o leggono
 dispositivi: usale solo su obiettivi autorizzati e, per software non fidato,
-in un ambiente isolato. Gli strumenti che eseguono o strumentano software o
-modificano un dispositivo sono disattivati finché non avvii InsideApp con
+in un ambiente isolato. Gli strumenti che eseguono, strumentano o osservano
+software in esecuzione, o che accedono a un dispositivo collegato, sono
+disattivati finché non avvii InsideApp con
 `INSIDEAPP_ALLOW_DYNAMIC_ANALYSIS=1` (vedi il README): la dichiarazione di
 autorizzazione all'analisi statica non li copre. InsideApp **non è una sandbox**: i programmi
 analizzati vengono elaborati con i permessi del tuo utente.
