@@ -219,15 +219,22 @@ it("does not assign a peer's later cancellation to a descriptor that already fai
   const controller = new AbortController();
   const reason = new Error("cancel after the first descriptor failure");
   let entered!: () => void;
+  let firstCloseAttempted!: () => void;
   let release!: () => void;
   const waiting = new Promise<void>((resolve) => {
     entered = resolve;
+  });
+  const firstCloseFailing = new Promise<void>((resolve) => {
+    firstCloseAttempted = resolve;
   });
   const gate = new Promise<void>((resolve) => {
     release = resolve;
   });
   fault.onClose = async (handle) => {
-    if (handle === fault.handles[0]) return;
+    if (handle === fault.handles[0]) {
+      firstCloseAttempted();
+      return;
+    }
     entered();
     await gate;
   };
@@ -236,7 +243,12 @@ it("does not assign a peer's later cancellation to a descriptor that already fai
     .listSessions({ signal: controller.signal })
     .catch((cause: unknown) => cause);
   try {
-    await waiting;
+    // Descriptors are read concurrently, so the peer can reach its blocked
+    // close while the first descriptor is still reading. Wait for both events:
+    // the first close was attempted (and fails) and the peer close is blocked.
+    await Promise.all([waiting, firstCloseFailing]);
+    // The first failure is classified in microtasks without further I/O
+    // (OwnedFileHandle.close, withOwnedFileHandle); one macrotask drains them.
     await new Promise((resolve) => setImmediate(resolve));
     controller.abort(reason);
     release();
