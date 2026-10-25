@@ -234,8 +234,10 @@ export const GUI_APP_JS = `"use strict";
 
   const targetLabel = (target) =>
     target.route === "javascript-application" ? "applicazione JavaScript/Electron: analisi completa" :
-    target.kind === "bundle" ? "bundle .app: ispezione generica (analisi dedicata in una prossima versione)" :
-    target.kind === "folder" ? "cartella: ispezione generica" : "file: ispezione del formato e dei contenuti";
+    target.route === "apple-bundle" ? "app macOS: struttura, Info.plist, eseguibile e firma" :
+    target.route === "sqlite" ? "database SQLite: solo la struttura, nessun dato delle tabelle" :
+    target.kind === "folder" ? "cartella: ispezione generica" :
+    "file: formato e contenuti (per gli eseguibili Windows anche importazioni, risorse e firma)";
   const updateStart = () => {
     byId("start").disabled = !(byId("authorized").checked && state.target && !state.analysis);
   };
@@ -253,6 +255,7 @@ export const GUI_APP_JS = `"use strict";
         steps("analyze");
       } else {
         byId("target").textContent = result.outcome === "cancelled" ? "Nessun elemento scelto." :
+          result.outcome === "too_broad" ? "Questa cartella è troppo ampia: scegli un'applicazione o una cartella più specifica, non la radice del disco o la cartella Inizio." :
           response.status === 409 ? "La finestra di scelta è già aperta." : "L'elemento scelto non è utilizzabile.";
       }
     } catch { byId("target").textContent = "Il motore locale non risponde."; }
@@ -391,7 +394,9 @@ export const GUI_APP_JS = `"use strict";
 
   const ROUTES = {
     "javascript-application": "App Electron e JavaScript (cartella o .asar): analisi completa",
-    artifact: "Altri file e bundle .app: ispezione del formato",
+    "apple-bundle": "App macOS (.app): struttura, Info.plist, eseguibile e firma",
+    sqlite: "Database SQLite: struttura, senza leggere i dati",
+    artifact: "Altri file: formato e contenuti; eseguibili Windows con importazioni, risorse e firma",
   };
   const fact = (list, label, value) => list.append(el("dt", "", label), el("dd", "", value));
   const refresh = async () => {

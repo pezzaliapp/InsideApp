@@ -39,6 +39,8 @@ export interface GuiServerOptions {
   /** Environment for analyses, as the CLI snapshots it. */
   readonly environment?: Readonly<Record<string, string | undefined>>;
   readonly logger?: Logger;
+  /** Home folder, refused as a target; the CLI passes the session's home. */
+  readonly homeDirectory?: string;
   /** Native file dialog; tests substitute a port that returns fixed choices. */
   readonly picker?: GuiPicker;
   readonly signal?: AbortSignal;
@@ -201,6 +203,7 @@ export const startGuiServer = async (
   context = {
     projectRoot: options.projectRoot,
     idleTimeoutMs: options.idleTimeoutMs,
+    homeDirectory: options.homeDirectory,
     session,
     targets: new GuiTargets(),
     analyses,

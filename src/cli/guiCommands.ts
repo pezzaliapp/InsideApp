@@ -3,6 +3,7 @@ import type { Logger } from "pino";
 
 import { CLI_COMMANDS } from "../cliCommandNames.js";
 import { logCliCommand } from "../cliLogging.js";
+import { homeDirectoryFromEnvironment } from "../config/homeDirectory.js";
 import {
   guiLauncherDirectory,
   guiProjectRoot,
@@ -46,6 +47,10 @@ export const registerGuiCommands = (
             launcherDirectory: guiLauncherDirectory(projectRoot),
             idleTimeoutMs: options.idleTimeoutMinutes * 60_000,
             environment,
+            homeDirectory: homeDirectoryFromEnvironment(
+              environment,
+              process.platform,
+            ),
             logger,
             signal,
           });

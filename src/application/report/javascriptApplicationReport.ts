@@ -1,6 +1,9 @@
 import type { ApplicationGraphEvidence } from "../../domain/javascript/javascriptApplicationEvidenceSchemas.js";
 import type { ApplicationNode } from "../../domain/javascript/javascriptApplicationGraphSchemas.js";
-import type { JavaScriptApplicationAnalysisResult } from "../../domain/javascript/javascriptApplicationAnalysis.js";
+import {
+  parseOwnedJavaScriptApplicationAnalysisSteps,
+  type JavaScriptApplicationAnalysisResult,
+} from "../../domain/javascript/javascriptApplicationAnalysis.js";
 import type { JAVASCRIPT_SEMANTIC_UNKNOWN_REASONS } from "../../domain/javascript/javascriptSemanticGraphSchemas.js";
 import type { JsonValue } from "../../domain/jsonValue.js";
 import {
@@ -13,7 +16,12 @@ import {
   type ReportEvidenceReference,
   type ReportSection,
 } from "../../domain/report/insideAppReport.js";
-import { quoted, recordEvidence, type RecordContext } from "./reportText.js";
+import {
+  quoted,
+  recordEvidence,
+  type RecordContext,
+  type ReportClaimBuilder,
+} from "./reportText.js";
 
 type NodeKind = ApplicationNode["kind"];
 type NodeObservation = ApplicationNode["observations"][number];
@@ -489,14 +497,23 @@ const addSemanticUnknowns = (
     });
 };
 
-/** Build report sections from one validated JavaScript application analysis. */
-export const javascriptApplicationReportSections = (
-  result: JavaScriptApplicationAnalysisResult,
-  record: RecordContext,
-): readonly ReportSection[] => {
-  const collector = new ReportClaimCollector();
+const parseJavaScriptResult = (
+  value: unknown,
+): JavaScriptApplicationAnalysisResult => {
+  const steps = parseOwnedJavaScriptApplicationAnalysisSteps(value);
+  let step = steps.next();
+  while (!step.done) step = steps.next();
+  return step.value;
+};
+
+/** Claims of one JavaScript application analysis, parsed by its owner. */
+export const javascriptApplicationClaims: ReportClaimBuilder = (
+  collector,
+  value,
+  record,
+) => {
+  const result = parseJavaScriptResult(value);
   addAnalysisFacts(result, record, collector);
   addGraphFacts(result, record, collector);
   addSemanticUnknowns(result, record, collector);
-  return collector.sections();
 };

@@ -92,6 +92,17 @@ export const renderReportMarkdown = (report: InsideAppReport): string => {
       : [`- **SHA-256:** ${markdownCode(report.subject.sha256)}`]),
     `- **Analisi:** ${markdownText(report.analysis.description)}`,
     `- **Evidence:** ${markdownCode(report.analysis.evidence_id)} (${markdownCode(report.analysis.operation)})`,
+    ...(report.analysis.supplements.length === 0
+      ? []
+      : [
+          `- **Analisi aggiuntive:** ${report.analysis.supplements
+            .map((supplement) =>
+              supplement.status === "completed"
+                ? `${markdownCode(supplement.operation)} (Evidence ${markdownCode(supplement.evidence_id)})`
+                : `${markdownCode(supplement.operation)} (non riuscita: ${markdownCode(supplement.failure_code)})`,
+            )
+            .join(", ")}`,
+        ]),
     `- **Generato:** ${report.generated_at} con ${markdownText(report.generator.name)} ${report.generator.version}`,
     `- **Autorizzazione:** ${AUTHORIZATION_NOTE}`,
     "",
@@ -176,6 +187,15 @@ const htmlClaim = (claim: ReportClaim): string => {
 const definition = (term: string, value: string | null): string =>
   value === null ? "" : `<dt>${html(term)}</dt><dd>${html(value)}</dd>`;
 
+const supplementsText = (report: InsideAppReport): string =>
+  report.analysis.supplements
+    .map((supplement) =>
+      supplement.status === "completed"
+        ? `${supplement.operation} (Evidence ${supplement.evidence_id})`
+        : `${supplement.operation} (non riuscita: ${supplement.failure_code})`,
+    )
+    .join(", ");
+
 /** Render a self-contained HTML page: no scripts, no external resources. */
 export const renderReportHtml = (report: InsideAppReport): string => {
   const sections = report.sections
@@ -213,7 +233,7 @@ ${definition("Oggetto", `${report.subject.name}${report.subject.format === null 
 ${definition("Percorso", report.subject.path)}
 ${definition("SHA-256", report.subject.sha256)}
 ${definition("Analisi", report.analysis.description)}
-${definition("Evidence", `${report.analysis.evidence_id} (${report.analysis.operation})`)}
+${definition("Evidence", `${report.analysis.evidence_id} (${report.analysis.operation})`)}${report.analysis.supplements.length === 0 ? "" : `\n${definition("Analisi aggiuntive", supplementsText(report))}`}
 ${definition("Generato", `${report.generated_at} con ${report.generator.name} ${report.generator.version}`)}
 ${definition("Autorizzazione", AUTHORIZATION_NOTE)}
 </dl></div>

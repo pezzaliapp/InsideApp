@@ -7,9 +7,9 @@ import {
   type ReportAnalysisPorts,
 } from "../application/report/generateReport.js";
 import { ArtifactResourceScope } from "../artifacts/ArtifactResourceScope.js";
-import { createDirectAnalysis } from "../composition/directAnalysis.js";
-import { analysisCliErrorEnvelopeSchema } from "../contracts/errorSchemas.js";
+import { createReportAnalysisPorts } from "../composition/reportAnalysis.js";
 import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
+import type { JsonValue } from "../domain/jsonValue.js";
 import type { InsideAppReport } from "../domain/report/insideAppReport.js";
 import { err, ok } from "../domain/result.js";
 import type { GuiTarget } from "./guiTargets.js";
@@ -73,30 +73,30 @@ const failureOf = (value: unknown): GuiAnalysisFailure => {
 export class GuiAnalyses {
   readonly #analyses = new Map<string, GuiAnalysis>();
   readonly #scope = new ArtifactResourceScope();
-  readonly #direct: ReturnType<typeof createDirectAnalysis>;
   #current: GuiAnalysis | undefined;
 
   constructor(
     private readonly environment: Readonly<Record<string, string | undefined>>,
     private readonly logger: Logger,
     private readonly now: () => number,
-  ) {
-    this.#direct = createDirectAnalysis(environment);
-  }
+  ) {}
 
   get busy(): boolean {
     return this.#current !== undefined;
   }
 
-  #ports(analysis: GuiAnalysis): ReportAnalysisPorts<GuiAnalysisFailure> {
+  /** Shared engine operations; only the JavaScript worker belongs to the GUI. */
+  #ports(analysis: GuiAnalysis): ReportAnalysisPorts<JsonValue> {
     const progress = createProgressReporter(
       async (update) => {
         analysis.phase = PHASES[update.message] ?? "Analisi in corso";
       },
       { minimumIntervalMs: 0 },
     );
-    return {
-      "javascript-application": async (path, signal) => {
+    return createReportAnalysisPorts({
+      environment: this.environment,
+      logger: this.logger,
+      javascript: async (path, signal) => {
         // Loaded on first use, as the CLI does, so it stays a lazy runtime chunk.
         const { analyzeJavaScriptApplication } =
           await import("../application/javascript/JavaScriptApplicationService.js");
@@ -108,23 +108,10 @@ export class GuiAnalyses {
         // Failed owners are retried now; a parked healthy worker stays owned.
         await this.#scope.retryCleanup();
         return result.ok
-          ? ok(result.value)
-          : err(failureOf(projectAnalysisError(result.error)));
+          ? ok(result.value as unknown as JsonValue)
+          : err(projectAnalysisError(result.error) as unknown as JsonValue);
       },
-      artifact: async (path, signal) => {
-        analysis.phase = "Ispezione del formato e dei contenuti";
-        const value = await this.#direct.runProviderAnalysis(
-          path,
-          "inspect_artifact",
-          { integrity_policy: "fail" },
-          this.logger,
-          signal,
-        );
-        return analysisCliErrorEnvelopeSchema.safeParse(value).success
-          ? err(failureOf(value))
-          : ok(value);
-      },
-    };
+    });
   }
 
   /** Start an analysis; undefined when another one is still running. */
@@ -136,7 +123,7 @@ export class GuiAnalyses {
       startedAt: this.now(),
       controller: new AbortController(),
       status: "running",
-      phase: "Avvio dell'analisi",
+      phase: "Analisi statica in corso",
       finishedAt: undefined,
       failure: undefined,
       report: undefined,
@@ -171,7 +158,7 @@ export class GuiAnalyses {
         analysis.status = "failed";
         analysis.failure =
           report.error.kind === "analysis-failed"
-            ? report.error.failure
+            ? failureOf(report.error.failure)
             : { code: "report_failed", category: "unreadable_output" };
       }
     } catch {

@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 
@@ -10,6 +10,10 @@ import { analyzeJavaScriptApplication } from "../../../src/application/javascrip
 import { generateReport } from "../../../src/application/report/generateReport.js";
 import { renderReportMarkdown } from "../../../src/application/report/renderInsideAppReport.js";
 import { ArtifactResourceScope } from "../../../src/artifacts/ArtifactResourceScope.js";
+import { createReportAnalysisPorts } from "../../../src/composition/reportAnalysis.js";
+import { projectAnalysisError } from "../../../src/domain/analysisErrorProjection.js";
+import type { JsonValue } from "../../../src/domain/jsonValue.js";
+import { createLogger } from "../../../src/logger.js";
 import { err, ok } from "../../../src/domain/result.js";
 import {
   createOsascriptPicker,
@@ -324,19 +328,24 @@ describe("InsideApp GUI analysis and report", () => {
       // Same report as the shared service run in-process, apart from the path.
       const scope = new ArtifactResourceScope();
       try {
-        const shared = await generateReport<unknown>(
+        const shared = await generateReport(
           { path: NOTES, authorized: true },
-          {
-            "javascript-application": async (path, signal) => {
+          createReportAnalysisPorts({
+            environment: {},
+            logger: createLogger("cli", "silent"),
+            javascript: async (path, signal) => {
               const result = await analyzeJavaScriptApplication(
                 { input_path: path },
                 scope,
                 { signal },
               );
-              return result.ok ? ok(result.value) : err(result.error);
+              return result.ok
+                ? ok(result.value as unknown as JsonValue)
+                : err(
+                    projectAnalysisError(result.error) as unknown as JsonValue,
+                  );
             },
-            artifact: async () => err("unused"),
-          },
+          }),
           {
             generatedAt: new Date(
               /- \*\*Generato:\*\* (\S+) con /u.exec(markdown.body)![1]!,
@@ -360,20 +369,17 @@ describe("InsideApp GUI analysis and report", () => {
   );
 
   it(
-    "inspects other files and explains unsupported ones without paths",
+    "inspects other files and explains unreadable ones without paths",
     async () => {
       const root = await createTestTempDirectory("rea-insideapp-gui-files-");
       const archive = join(root, "bundle.zip");
       const writer = new ZipWriter(new Uint8ArrayWriter());
       await writer.add("main.js", new TextReader("console.log(1);\n"));
       await writeFile(archive, await writer.close());
-      const database = join(root, "notes.sqlite");
-      await writeFile(
-        database,
-        Buffer.concat([Buffer.from("SQLite format 3\0"), Buffer.alloc(4080)]),
-      );
+      const vanishing = join(root, "sparito.bin");
+      await writeFile(vanishing, "dati");
       const session = await signedIn({
-        picker: queuedPicker(archive, database),
+        picker: queuedPicker(archive, vanishing),
       });
       const zip = await pick(session, "file");
       expect(zip.target).toMatchObject({
@@ -384,17 +390,16 @@ describe("InsideApp GUI analysis and report", () => {
       expect(
         await settled(session, await analyze(session, zip.target!.id)),
       ).toMatchObject({ status: "completed" });
-      const sqlite = await pick(session, "file");
+      const gone = await pick(session, "file");
+      await rm(vanishing);
       const failed = await settled(
         session,
-        await analyze(session, sqlite.target!.id),
+        await analyze(session, gone.target!.id),
       );
       expect(failed).toMatchObject({
         status: "failed",
         failure: {
-          message: expect.stringContaining(
-            "non è supportato in questa versione",
-          ),
+          message: "L'elemento scelto non è stato trovato o non è leggibile.",
         },
       });
       expect(JSON.stringify(failed)).not.toContain(root);

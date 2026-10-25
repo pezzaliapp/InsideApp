@@ -1,7 +1,7 @@
 # Architettura di InsideApp: modalità autonoma e modalità Claude
 
-Stato: architettura approvata. G0, G1 e G2 completati; G3–G5 da autorizzare
-uno alla volta. Sostituisce e dettaglia `proposte/gui-insideapp.md`.
+Stato: architettura approvata. G0, G1, G2 e G3 completati; G4 e G5 da
+autorizzare uno alla volta. Sostituisce e dettaglia `proposte/gui-insideapp.md`.
 
 ## 1. Obiettivi e vincoli
 
@@ -252,21 +252,22 @@ il token monouso o i limiti del corpo, almeno un test fallisce.
 | Avanzamento senza percentuali: fase reale del motore e tempo trascorso; interrogazione ogni 2 s solo durante l'analisi        | `guiAssets.ts`                         | in Chrome intervalli ≥ 1,9 s; nessuna interrogazione dopo la fine                                  |
 | Esportazione dal browser (download), senza scritture del server su disco                                                      | `export.html`, `export.md`             | nome file e `Content-Disposition` verificati                                                       |
 
-**Memoria (misurata in G2, limite non bloccante).** Le misure riguardano 20 analisi
-dell'app di esempio e 3 di un'app sintetica grande (200 file, circa 12.000
-funzioni).
+**Memoria (misurata in G2 e G3, limite non bloccante).**
 
-- L'heap JavaScript del server, dopo la garbage collection, resta stabile a
-  circa 50 MB: non c'è evidenza di perdite.
-- L'RSS del processo si stabilizza a circa 260 MB con le app piccole. Dopo
-  un'analisi grande (picco di circa 1,07 GB) resta intorno a 890 MB e cresce di
-  circa 6 MB per ripetizione: è compatibile con memoria nativa trattenuta
-  dall'allocatore, ma non è ancora verificato con più ripetizioni.
-- Il worker JavaScript resta in attesa tra un'analisi e l'altra (circa 220 MB)
-  e si chiude con il server.
+- In G3, 8 analisi consecutive dell'app sintetica grande (200 file, circa
+  12.000 funzioni) nello stesso server: RSS 1.258 → 1.289 → 1.292 MB, poi
+  stabile fino all'ottava (1.293 MB). L'heap dopo la garbage collection resta
+  stabile a circa 189 MB.
+- La crescita osservata in G2 era quindi un assestamento dell'allocatore, non
+  una perdita.
+- Il primo uso delle analisi native carica una sola volta circa 150 MB di
+  moduli e schemi.
+- Picco durante un'analisi grande: circa 1,48 GB nel server. Il worker
+  JavaScript resta in attesa (circa 255 MB) e si chiude con il server; non
+  restano processi figli.
 
-Possibili interventi futuri: chiudere il worker dopo ogni analisi e misurare
-più ripetizioni.
+Ottimizzazione possibile ma non urgente: eseguire le analisi molto grandi in
+un processo usa e getta, per restituire subito la memoria al sistema.
 
 ## 5. Piano dei test
 
@@ -307,22 +308,37 @@ estesa per ammettere solo connessioni a `127.0.0.1` sulla porta della GUI.
 | G0    | `generateReport` applicativo, instradamento condiviso, CLI adattata, log npm locali (fatto)      | test della Fase 0 invariati, parità         |
 | G1    | server GUI sicuro (sessione, Host, Origin, CSRF, CSP, limiti, chiusura); pagina iniziale (fatto) | test di confine HTTP e mutazioni            |
 | G2    | flusso completo: liceità, scelta, analisi, rapporto, esportazione (fatto)                        | test di flusso, parità ed effetti sull'host |
-| G3    | avanzamento, annullamento, formati prioritari (sotto)                                            | rapporti sulle fixture di ciascun tipo      |
+| G3    | formati prioritari .app, PE e SQLite; dimensioni misurate; limiti (fatto)                        | rapporti sulle fixture di ciascun tipo      |
 | G4    | modalità Claude: testo per Claude Code; strumento MCP `create_report` sullo stesso servizio      | test MCP e catalogo a 228 strumenti         |
 | G5    | sito statico su `insideapp.pezzalihub.app` (Cloudflare Free)                                     | sito pubblicato dopo la tua approvazione    |
 
-### 6.1 Formati prioritari: cosa fa oggi `report` e cosa serve (verificato su fixture)
+### 6.1 Formati prioritari (G3, completato)
 
-| Formato                   | Oggi nel rapporto                                                                                               | Già nel motore, da collegare in G3                                                                      | Non promesso                                                                   |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| App macOS `.app`          | solo inventario: numero di elementi ed eseguibili Mach-O; plist e firma indicati come "da esaminare"            | `Info.plist`, firma ed entitlement, librerie dinamiche, rilevamento di Electron nel bundle (`app.asar`) | decompilazione senza Ghidra installato da te                                   |
-| Electron cartella/`.asar` | analisi profonda: processo principale, preload, finestre, IPC, API esposte, moduli, `webPreferences`, incognite | fuse di Electron, source map, endpoint e archiviazione quando presenti                                  | comportamento a runtime: l'app non viene mai eseguita                          |
-| Windows `.exe`/`.dll`     | formato PE, dimensione, ipotesi .NET o nativo; passi successivi suggeriti                                       | import, export, certificati, risorse, metadati .NET (`inspect_managed_artifact`)                        | decompilazione del codice nativo senza Ghidra; verifica online dei certificati |
-| SQLite                    | **non supportato**: `report` restituisce l'errore del motore ("unsupported binary format")                      | schema, tabelle, conteggi con `inspect_sqlite_database`                                                 | contenuto cifrato (ad esempio SQLCipher)                                       |
+Ogni via del rapporto usa operazioni del motore già esistenti, attraverso
+`src/composition/reportAnalysis.ts`, condiviso da CLI e GUI. L'analisi
+principale decide il rapporto; le analisi aggiuntive arricchiscono, e se una
+fallisce viene indicata come "Sconosciuto" con il suo codice.
 
-Difetto da correggere in G3: per una cartella o un bundle `.app` il rapporto
-scrive "dimensione 0 byte", perché riporta la dimensione del nodo cartella.
-Non l'ho corretto in G0 per non cambiare l'output esistente.
+| Formato                   | Analisi principale                                   | Analisi aggiuntive                                                                                                            | Nel rapporto                                                                                                                                                                                                                                                                        | Non promesso                                                                                                  |
+| ------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| App macOS `.app`          | `inspect_desktop_application`                        | `inspect_plist`, `inspect_macho`, `inspect_signature`                                                                         | struttura e dimensione misurata; identità, versione, sistema minimo, permessi dichiarati (`NS*UsageDescription`), schemi URL, App Transport Security; architetture, piattaforma, librerie; firma, team, Hardened Runtime, entitlement; tecnologia individuata (ad esempio Electron) | validità della firma presso Apple; decompilazione senza Ghidra                                                |
+| Electron cartella/`.asar` | `analyze_javascript_application`                     | —                                                                                                                             | come in Fase 0                                                                                                                                                                                                                                                                      | comportamento a runtime                                                                                       |
+| Windows `.exe`/`.dll`     | `inspect_artifact` (riconosce il PE)                 | `inspect_managed_artifact`, `inspect_pe_imports`, `inspect_pe_resources`, `inspect_pe_certificates`, `inspect_native_exports` | PE32/PE32+, architettura, numero di sezioni, EXE o DLL, .NET o nativo; DLL importate; capacità potenziali sempre come **Ipotesi**; risorse; firma Authenticode presente o assente; esportazioni                                                                                     | nomi e permessi delle sezioni (non esposti dal motore); verifica dei certificati; decompilazione senza Ghidra |
+| SQLite                    | `inspect_sqlite_database` (`schema_scope: database`) | —                                                                                                                             | motore, dimensione, codifica, tabelle con colonne e tipi, indici, viste, trigger                                                                                                                                                                                                    | contenuto delle righe: mai letto; database cifrati                                                            |
+
+Altre scelte:
+
+- Il formato dei file viene deciso dal classificatore dei byte del motore
+  (`inspect_artifact`); solo SQLite viene riconosciuto dall'intestazione
+  documentata `SQLite format 3\0`, poi convalidato da SQLite stesso.
+- Il difetto "dimensione 0 byte" è corretto: la dimensione è la somma misurata
+  dei file, e il rapporto dichiara quando la misura è parziale.
+- **Limiti di risorse:**
+  - bundle: al massimo 20.000 elementi esaminati, oltre la copertura è parziale;
+  - limiti di byte e voci dei servizi PE e SQLite;
+  - risorse del worker JavaScript;
+  - la GUI rifiuta la radice del disco, le cartelle di primo livello e la
+    cartella Inizio.
 
 ## 7. Sito pubblico su Cloudflare Free (G5, non ora)
 

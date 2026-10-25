@@ -1,4 +1,7 @@
-import type { ReportEvidenceReference } from "../../domain/report/insideAppReport.js";
+import type {
+  ReportClaimCollector,
+  ReportEvidenceReference,
+} from "../../domain/report/insideAppReport.js";
 
 /** Longest target-controlled text quoted in one report sentence. */
 const MAX_QUOTED_CHARACTERS = 160;
@@ -27,6 +30,8 @@ export interface RecordContext {
   readonly operation: string;
   readonly subjectSha256: string | null;
   readonly confidence: string;
+  /** Operations a completed supplement already ran for this item. */
+  readonly resolvedOperations: ReadonlySet<string>;
 }
 
 export const recordEvidence = (
@@ -40,3 +45,17 @@ export const recordEvidence = (
   engine_assessment: `record/${record.confidence}`,
   additional_occurrences: 0,
 });
+
+/**
+ * Adds the claims of one Evidence result. It parses `normalizedResult` with
+ * the result owner's schema and throws its ZodError when the result is invalid.
+ */
+export type ReportClaimBuilder = (
+  collector: ReportClaimCollector,
+  normalizedResult: unknown,
+  record: RecordContext,
+) => void;
+
+/** Byte count with Italian thousands separators, independent of host locale. */
+export const formatBytes = (bytes: number): string =>
+  `${String(bytes).replace(/\B(?=(\d{3})+(?!\d))/gu, ".")} byte`;

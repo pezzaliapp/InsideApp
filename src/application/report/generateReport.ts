@@ -1,7 +1,9 @@
+import { open, realpath, stat } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
 import type { InsideAppReport } from "../../domain/report/insideAppReport.js";
 import { err, type Result } from "../../domain/result.js";
+import { findAppBundleResourceRoot } from "../AppBundleExecutable.js";
 import { isJavaScriptApplicationPath } from "../javascript/javascriptApplicationPath.js";
 import {
   createInsideAppReport,
@@ -10,9 +12,25 @@ import {
 } from "./InsideAppReportService.js";
 
 /** Analysis lanes a report can be built from. */
-export const REPORT_ROUTES = ["javascript-application", "artifact"] as const;
+export const REPORT_ROUTES = [
+  "javascript-application",
+  "apple-bundle",
+  "sqlite",
+  "artifact",
+] as const;
 
 export type ReportRoute = (typeof REPORT_ROUTES)[number];
+
+/** A further analysis of the same item; its failure is reported, not fatal. */
+export type ReportSupplement =
+  | { readonly operation: string; readonly evidence: unknown }
+  | { readonly operation: string; readonly failureCode: string };
+
+/** Completed Evidence for one item: the primary record and any supplements. */
+export interface ReportEvidenceSet {
+  readonly primary: unknown;
+  readonly supplements: readonly ReportSupplement[];
+}
 
 /**
  * One analysis run. It resolves to completed Evidence, or to the adapter's
@@ -21,7 +39,7 @@ export type ReportRoute = (typeof REPORT_ROUTES)[number];
 export type ReportAnalysisRunner<Failure> = (
   path: string,
   signal: AbortSignal,
-) => Promise<Result<unknown, Failure>>;
+) => Promise<Result<ReportEvidenceSet, Failure>>;
 
 /**
  * Analysis runners supplied by each adapter (CLI, GUI, MCP). Adapters keep
@@ -47,11 +65,44 @@ export interface GenerateReportOptions extends ReportOptions {
   readonly signal: AbortSignal;
 }
 
-/** Directories and `.asar` files are JavaScript applications, as for `analyze`. */
-export const selectReportRoute = async (path: string): Promise<ReportRoute> =>
-  (await isJavaScriptApplicationPath(path))
-    ? "javascript-application"
-    : "artifact";
+/** The 16-byte header every SQLite 3 database file starts with. */
+const SQLITE_HEADER = Buffer.from("SQLite format 3\0", "latin1");
+
+/** Routing hint only: SQLite itself validates the database when it opens it. */
+const hasSqliteHeader = async (path: string): Promise<boolean> => {
+  const file = await open(path, "r");
+  try {
+    const header = Buffer.alloc(SQLITE_HEADER.length);
+    const { bytesRead } = await file.read(header, 0, header.length, 0);
+    return bytesRead === header.length && header.equals(SQLITE_HEADER);
+  } finally {
+    await file.close();
+  }
+};
+
+/**
+ * Directories and `.asar` files are JavaScript applications, as for `analyze`;
+ * resolved app bundles are Apple bundles; files with the SQLite header are
+ * databases. Everything else, including unreadable paths, takes the artifact
+ * lane, whose inspection classifies formats and reports failures.
+ */
+export const selectReportRoute = async (path: string): Promise<ReportRoute> => {
+  if (await isJavaScriptApplicationPath(path)) return "javascript-application";
+  try {
+    const canonical = await realpath(path);
+    const info = await stat(canonical);
+    if (info.isDirectory()) {
+      const bundle = await findAppBundleResourceRoot(canonical);
+      return bundle.ok && bundle.value !== undefined
+        ? "apple-bundle"
+        : "artifact";
+    }
+    if (info.isFile() && (await hasSqliteHeader(canonical))) return "sqlite";
+  } catch {
+    // The artifact lane reports unreadable or vanished paths.
+  }
+  return "artifact";
+};
 
 /**
  * Shared report workflow for every adapter: refuse undeclared authorization

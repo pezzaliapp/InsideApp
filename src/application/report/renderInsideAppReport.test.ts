@@ -53,6 +53,7 @@ const report: InsideAppReport = {
     evidence_id: "ev_0",
     provider: "test",
     description: "Analisi di prova.",
+    supplements: [],
   },
   sections,
   engine_limitations: ["Static <only>."],
@@ -82,5 +83,34 @@ describe("InsideApp report rendering", () => {
     expect(html).toContain("<li>file: <code>dir/`odd`.js</code></li>");
     expect(html).toContain("<li>Static &lt;only&gt;.</li>");
     expect(html).not.toMatch(/<script|<demo>|https?:\/\//u);
+  });
+
+  it("lists supplementary analyses, including failed ones, only when present", () => {
+    const withSupplements: InsideAppReport = {
+      ...report,
+      analysis: {
+        ...report.analysis,
+        supplements: [
+          {
+            operation: "inspect_plist",
+            status: "completed",
+            evidence_id: "ev_2",
+          },
+          {
+            operation: "inspect_signature",
+            status: "failed",
+            failure_code: "provider_timeout",
+          },
+        ],
+      },
+    };
+    expect(renderReportMarkdown(withSupplements)).toContain(
+      "- **Analisi aggiuntive:** `inspect_plist` (Evidence `ev_2`), `inspect_signature` (non riuscita: `provider_timeout`)",
+    );
+    expect(renderReportHtml(withSupplements)).toContain(
+      "<dt>Analisi aggiuntive</dt><dd>inspect_plist (Evidence ev_2), inspect_signature (non riuscita: provider_timeout)</dd>",
+    );
+    expect(renderReportMarkdown(report)).not.toContain("Analisi aggiuntive");
+    expect(renderReportHtml(report)).not.toContain("Analisi aggiuntive");
   });
 });

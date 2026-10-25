@@ -167,12 +167,7 @@ export const createCli = (
   registerElectronCommands(cli, logger, environment);
   registerJavaScriptRuntimeObservationCommands(cli, logger, environment);
   registerApplicationCommands(cli, logger);
-  registerReportCommands(
-    cli,
-    logger,
-    environment,
-    analysis.runProviderAnalysis,
-  );
+  registerReportCommands(cli, logger, environment);
   registerGuiCommands(cli, logger, environment);
   presentOmittableDefaults(cli);
   if (resultOutput !== undefined) streamCliCommandResults(cli, resultOutput);

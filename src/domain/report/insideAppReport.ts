@@ -88,6 +88,20 @@ export interface ReportSection {
   readonly claims: readonly ReportClaim[];
 }
 
+/** One additional analysis that contributed claims, or why it could not. */
+export type ReportSupplementRecord =
+  | {
+      readonly operation: string;
+      readonly status: "completed";
+      readonly evidence_id: string;
+    }
+  | {
+      readonly operation: string;
+      readonly status: "failed";
+      /** Engine error code only; engine messages may contain local paths. */
+      readonly failure_code: string;
+    };
+
 export interface InsideAppReport {
   readonly schema: "InsideAppReport";
   readonly schema_version: 1;
@@ -106,6 +120,8 @@ export interface InsideAppReport {
     readonly evidence_id: string;
     readonly provider: string;
     readonly description: string;
+    /** Further analyses of the same item; a failed one never hides the others. */
+    readonly supplements: readonly ReportSupplementRecord[];
   };
   readonly sections: readonly ReportSection[];
   /** Engine limitations, verbatim (in English). */
@@ -173,6 +189,12 @@ export class ReportClaimCollector {
             },
           },
     );
+  }
+
+  /** Add every claim of another collector, with the same merging rules. */
+  merge(other: ReportClaimCollector): void {
+    for (const section of other.sections())
+      for (const claim of section.claims) this.add(section.id, claim);
   }
 
   sections(): readonly ReportSection[] {

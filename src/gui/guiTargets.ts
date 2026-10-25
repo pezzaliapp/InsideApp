@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { lstat } from "node:fs/promises";
-import { basename, isAbsolute } from "node:path";
+import { basename, dirname, isAbsolute, resolve, sep } from "node:path";
 
 import {
   selectReportRoute,
@@ -87,6 +87,18 @@ export interface GuiTarget extends GuiTargetView {
   readonly path: string;
 }
 
+/** The disk root, first-level folders and the home folder and its parent. */
+const isTooBroad = (
+  path: string,
+  homeDirectory: string | undefined,
+): boolean => {
+  const normalized = resolve(path);
+  if (normalized.split(sep).filter(Boolean).length <= 1) return true;
+  if (homeDirectory === undefined) return false;
+  const home = resolve(homeDirectory);
+  return normalized === home || normalized === dirname(home);
+};
+
 /** Most chosen items kept per session; older choices are forgotten. */
 export const GUI_MAX_TARGETS = 20;
 
@@ -94,7 +106,14 @@ export const GUI_MAX_TARGETS = 20;
 export class GuiTargets {
   readonly #targets = new Map<string, GuiTarget>();
 
-  async add(path: string): Promise<GuiTarget | undefined> {
+  /**
+   * Register a chosen item. Folders that would sweep a whole disk or account
+   * (the root, first-level folders, the home folder) are refused.
+   */
+  async add(
+    path: string,
+    homeDirectory: string | undefined,
+  ): Promise<GuiTarget | "too-broad" | undefined> {
     let info;
     try {
       info = await lstat(path);
@@ -102,6 +121,8 @@ export class GuiTargets {
       return undefined;
     }
     if (!info.isFile() && !info.isDirectory()) return undefined;
+    if (info.isDirectory() && isTooBroad(path, homeDirectory))
+      return "too-broad";
     const name = basename(path) || path;
     const target: GuiTarget = {
       id: randomBytes(16).toString("base64url"),

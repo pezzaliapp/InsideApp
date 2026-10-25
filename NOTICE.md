@@ -63,3 +63,6 @@ conservati integralmente in:
   monouso, cookie HttpOnly, controlli Host/Origin/CSRF e CSP rigida;
   scelta nativa dei file, analisi con avanzamento e annullamento, rapporto
   ed esportazione dal browser.
+- Rapporti per app macOS (.app), eseguibili Windows (.exe, .dll) e database
+  SQLite (solo struttura), composti da operazioni esistenti del motore in
+  `src/composition/reportAnalysis.ts`.

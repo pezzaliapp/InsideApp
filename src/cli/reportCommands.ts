@@ -6,7 +6,6 @@ import type { Logger } from "pino";
 import {
   generateReport,
   reportFileName,
-  type ReportAnalysisPorts,
 } from "../application/report/generateReport.js";
 import {
   renderReportHtml,
@@ -14,7 +13,6 @@ import {
 } from "../application/report/renderInsideAppReport.js";
 import { CLI_COMMANDS } from "../cliCommandNames.js";
 import { isCliOperationFailure, logCliCommand } from "../cliLogging.js";
-import type { DirectAnalysis } from "../composition/directAnalysis.js";
 import { homeDirectoryFromEnvironment } from "../config/homeDirectory.js";
 import {
   AnalysisInputError,
@@ -62,35 +60,20 @@ const authorizationRequired = () =>
     ),
   );
 
-/** CLI analysis runners; a failed run keeps its projected CLI error unchanged. */
-export const createCliReportAnalysisPorts = (
-  environment: Readonly<Record<string, string | undefined>>,
-  logger: Logger,
-  runProviderAnalysis: DirectAnalysis["runProviderAnalysis"],
-): ReportAnalysisPorts<JsonValue> => {
-  const settle = (value: JsonValue): Result<JsonValue, JsonValue> =>
-    isCliOperationFailure(value) ? err(value) : ok(value);
-  return {
-    "javascript-application": async (path, signal) =>
-      settle(
-        await runCliJavaScriptApplicationAnalysis(
-          { input_path: path },
-          environment,
-          signal,
-        ),
-      ),
-    artifact: async (path, signal) =>
-      settle(
-        await runProviderAnalysis(
-          path,
-          "inspect_artifact",
-          { integrity_policy: "fail" },
-          logger,
-          signal,
-        ),
-      ),
+/** The CLI's JavaScript runner keeps the process-wide worker scope. */
+const cliJavaScriptStep =
+  (environment: Readonly<Record<string, string | undefined>>) =>
+  async (
+    path: string,
+    signal: AbortSignal,
+  ): Promise<Result<JsonValue, JsonValue>> => {
+    const value = await runCliJavaScriptApplicationAnalysis(
+      { input_path: path },
+      environment,
+      signal,
+    );
+    return isCliOperationFailure(value) ? err(value) : ok(value);
   };
-};
 
 /** Write the selected renderings; an existing report for the same input is replaced. */
 const writeReportFiles = async (
@@ -117,13 +100,7 @@ export const registerReportCommands = (
   cli: CliInstance,
   logger: Logger,
   environment: Readonly<Record<string, string | undefined>>,
-  runProviderAnalysis: DirectAnalysis["runProviderAnalysis"],
 ): void => {
-  const ports = createCliReportAnalysisPorts(
-    environment,
-    logger,
-    runProviderAnalysis,
-  );
   cli.command(CLI_COMMANDS.report, {
     description:
       "Genera un rapporto in italiano (HTML e Markdown) su un'applicazione propria o autorizzata",
@@ -136,6 +113,14 @@ export const registerReportCommands = (
     run: ({ args, options }) =>
       withCommandCancellation((signal) =>
         logCliCommand(logger, CLI_COMMANDS.report, async () => {
+          // Loaded on use so registering the catalog never loads the analyzers.
+          const { createReportAnalysisPorts } =
+            await import("../composition/reportAnalysis.js");
+          const ports = createReportAnalysisPorts({
+            environment,
+            logger,
+            javascript: cliJavaScriptStep(environment),
+          });
           const report = await generateReport(
             {
               path: absoluteCallerPath(args.path),

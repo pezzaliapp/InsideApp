@@ -16,7 +16,9 @@ import {
   renderReportMarkdown,
 } from "../../../src/application/report/renderInsideAppReport.js";
 import { ArtifactResourceScope } from "../../../src/artifacts/ArtifactResourceScope.js";
-import { createDirectAnalysis } from "../../../src/composition/directAnalysis.js";
+import { createReportAnalysisPorts } from "../../../src/composition/reportAnalysis.js";
+import { projectAnalysisError } from "../../../src/domain/analysisErrorProjection.js";
+import type { JsonValue } from "../../../src/domain/jsonValue.js";
 import { ok, err } from "../../../src/domain/result.js";
 import { createLogger } from "../../../src/logger.js";
 import {
@@ -32,42 +34,28 @@ const cliOutputSchema = z.object({
 });
 
 /**
- * In-process ports that bypass the CLI: the JavaScript service with its own
- * resource scope, as a GUI adapter would own one, and the composed artifact
- * inspection.
+ * In-process ports that bypass the CLI: the shared composition with the
+ * JavaScript service on its own resource scope, as the GUI owns one.
  */
 const adapterNeutralPorts = (
   environment: Readonly<Record<string, string>>,
-): ReportAnalysisPorts<unknown> => {
+): ReportAnalysisPorts<JsonValue> => {
   const scope = new ArtifactResourceScope();
   onTestFinished(() => scope.close());
-  const analysis = createDirectAnalysis(environment);
-  const logger = createLogger("cli", "silent");
-  return {
-    "javascript-application": async (path, signal) => {
+  return createReportAnalysisPorts({
+    environment,
+    logger: createLogger("cli", "silent"),
+    javascript: async (path, signal) => {
       const result = await analyzeJavaScriptApplication(
         { input_path: path },
         scope,
         { environment, signal },
       );
-      return result.ok ? ok(result.value) : err(result.error);
+      return result.ok
+        ? ok(result.value as unknown as JsonValue)
+        : err(projectAnalysisError(result.error) as unknown as JsonValue);
     },
-    artifact: async (path, signal) => {
-      const value = await analysis.runProviderAnalysis(
-        path,
-        "inspect_artifact",
-        { integrity_policy: "fail" },
-        logger,
-        signal,
-      );
-      return typeof value === "object" &&
-        value !== null &&
-        !Array.isArray(value) &&
-        "error" in value
-        ? err(value)
-        : ok(value);
-    },
-  };
+  });
 };
 
 const generatedAt = (markdown: string): Date => {

@@ -31,10 +31,15 @@ const recordingPorts = (
   const port =
     (route: ReportRoute) => async (path: string, signal: AbortSignal) => {
       calls.push({ route, path, signal });
-      return outcome(route);
+      const result = outcome(route);
+      return result.ok
+        ? ok({ primary: result.value, supplements: [] })
+        : result;
     };
   const ports: ReportAnalysisPorts<Failure> = {
     "javascript-application": port("javascript-application"),
+    "apple-bundle": port("apple-bundle"),
+    sqlite: port("sqlite"),
     artifact: port("artifact"),
   };
   return { ports, calls };
@@ -64,7 +69,50 @@ describe("generateReport", () => {
     ).rejects.toThrow("absolute path");
   });
 
-  it("routes directories and .asar files like analyze and passes failures through", async () => {
+  it("routes each item to its lane and passes failures through", async () => {
+    const root = await createTestTempDirectory("rea-generate-report-");
+    const directory = join(root, "app");
+    await mkdir(directory);
+    await writeFile(join(root, "app.asar"), "not an archive");
+    await writeFile(join(root, "tool.exe"), "MZ");
+    const bundle = join(root, "Demo.app");
+    await mkdir(join(bundle, "Contents", "MacOS"), { recursive: true });
+    await writeFile(
+      join(bundle, "Contents", "Info.plist"),
+      '<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict><key>CFBundleExecutable</key><string>Demo</string></dict></plist>',
+    );
+    await writeFile(join(bundle, "Contents", "MacOS", "Demo"), "binary");
+    await writeFile(
+      join(root, "notes.sqlite"),
+      Buffer.concat([
+        Buffer.from("SQLite format 3\0", "latin1"),
+        Buffer.alloc(84),
+      ]),
+    );
+    await writeFile(join(root, "named.sqlite"), "not a database");
+    const { ports, calls } = recordingPorts((route) => err({ failed: route }));
+    for (const path of [
+      directory,
+      join(root, "app.asar"),
+      join(root, "tool.exe"),
+      join(root, "missing"),
+      bundle,
+      join(root, "notes.sqlite"),
+      join(root, "named.sqlite"),
+    ])
+      await generateReport({ path, authorized: true }, ports, options);
+    expect(calls.map(({ route }) => route)).toEqual([
+      "javascript-application",
+      "javascript-application",
+      "artifact",
+      "artifact",
+      "apple-bundle",
+      "sqlite",
+      "artifact",
+    ]);
+  });
+
+  it("passes the adapter's failure and signal through unchanged", async () => {
     const root = await createTestTempDirectory("rea-generate-report-");
     const directory = join(root, "app");
     await mkdir(directory);
@@ -81,12 +129,6 @@ describe("generateReport", () => {
       results.push(
         await generateReport({ path, authorized: true }, ports, options),
       );
-    expect(calls.map(({ route }) => route)).toEqual([
-      "javascript-application",
-      "javascript-application",
-      "artifact",
-      "artifact",
-    ]);
     expect(calls.every(({ signal }) => signal === options.signal)).toBe(true);
     expect(results).toEqual([
       err({

@@ -40,6 +40,8 @@ export type GuiStopReason = "interrupted" | "idle" | "shutdown";
 export interface GuiContext {
   readonly projectRoot: string;
   readonly idleTimeoutMs: number;
+  /** Home folder, refused as an analysis target together with the disk root. */
+  readonly homeDirectory: string | undefined;
   readonly session: GuiSession;
   readonly targets: GuiTargets;
   readonly analyses: GuiAnalyses;
@@ -67,6 +69,8 @@ type Handler = (call: ApiCall) => Promise<void>;
 const failureMessage = ({ code, category }: GuiAnalysisFailure): string => {
   if (category === "unsupported_target" || code === "unsupported_target")
     return "Questo elemento non è supportato in questa versione. InsideApp analizza app Electron (cartelle o file .asar) e ispeziona eseguibili, archivi e bundle .app.";
+  if (category === "invalid_input")
+    return "L'elemento non è leggibile nel formato previsto: potrebbe essere danneggiato o di un altro tipo.";
   if (code === "access_denied")
     return "InsideApp non ha il permesso di leggere l'elemento scelto.";
   if (category === "unavailable")
@@ -143,9 +147,14 @@ const pickTarget: Handler = async ({ context, request, reply }) => {
     const picked = await context.picker(kind, context.pickerSignal);
     context.touch();
     if (!picked.ok) return json(reply, 200, { outcome: picked.reason });
-    const target = await context.targets.add(picked.path);
+    const target = await context.targets.add(
+      picked.path,
+      context.homeDirectory,
+    );
     if (target === undefined)
       return json(reply, 200, { outcome: "unavailable" });
+    if (target === "too-broad")
+      return json(reply, 200, { outcome: "too_broad" });
     return json(reply, 200, {
       outcome: "selected",
       target: guiTargetView(target),

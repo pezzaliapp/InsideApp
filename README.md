@@ -131,9 +131,23 @@ HTML e Markdown nella cartella `rapporti-insideapp/` (esclusa da Git):
 
 - `--authorized` è obbligatorio: dichiara che il software è tuo o che sei
   autorizzato ad analizzarlo (vedi [AVVERTENZE.md](AVVERTENZE.md)).
-- Cartelle e file `.asar` vengono analizzati come applicazioni
-  JavaScript/Electron; gli altri file e i bundle `.app` con l'ispezione
-  generica degli artefatti.
+- **Cosa analizza, sempre in modo statico:**
+  - **App Electron** (cartelle o file `.asar`): processo principale, preload, finestre, canali IPC, API esposte, moduli.
+  - **App macOS** (`.app`):
+    - struttura e dimensione misurata;
+    - da Info.plist: identità, versione, sistema minimo, permessi dichiarati, schemi URL;
+    - eseguibile: architetture e librerie;
+    - firma ed entitlement.
+  - **Eseguibili Windows** (`.exe`, `.dll`):
+    - intestazioni e architettura;
+    - EXE o DLL, .NET o nativo;
+    - DLL importate, risorse, firma Authenticode ed esportazioni;
+    - le capacità suggerite dalle importazioni compaiono sempre come **Ipotesi**.
+  - **Database SQLite**: solo la struttura (tabelle, colonne, indici, viste, trigger). Il contenuto delle tabelle non viene mai letto e il file originale non viene modificato.
+  - **Altri file:** formato e contenuti.
+- **Limiti:**
+  - Nomi e permessi delle sezioni PE, validità delle firme e decompilazione non fanno parte del rapporto.
+  - La decompilazione richiede un motore gratuito come Ghidra, da installare a parte.
 - Il rapporto è diviso in **In breve**, **Componenti**, **Comunicazioni**,
   **Dati e file**, **Sicurezza** e **Limiti e sconosciuti**. Ogni affermazione è
   marcata come **Osservato**, **Derivato**, **Ipotesi** o **Sconosciuto** e
@@ -157,7 +171,7 @@ HTML e Markdown nella cartella `rapporti-insideapp/` (esclusa da Git):
   3. Avvii l'analisi: vedi la fase e il tempo trascorso, e puoi annullare.
   4. Leggi il rapporto con le classi Osservato, Derivato, Ipotesi e Sconosciuto e le prove; puoi filtrarlo per classe.
   5. Lo scarichi in HTML o Markdown, oppure lo stampi o salvi in PDF dal browser.
-- **Cosa analizza oggi:** le app Electron (cartelle o file `.asar`) con l'analisi completa; gli altri file e i bundle `.app` con l'ispezione generica. L'analisi dedicata di `.app`, `.exe`, `.dll` e SQLite arriverà in una prossima versione.
+- **Cosa analizza oggi:** le stesse vie del comando `report` (vedi sopra). Non sono analizzabili la radice del disco, le cartelle di primo livello e la cartella Inizio: scegli un'applicazione o una cartella più specifica.
 - **Privacy:** InsideApp legge solo l'elemento che scegli. Il percorso resta nel processo locale: non arriva al browser e non compare nei rapporti esportati. Le applicazioni analizzate non vengono mai eseguite.
 - **Dove ascolta:** solo su `127.0.0.1`, su una porta scelta dal sistema. Non è raggiungibile da altri dispositivi della rete e non richiede di aprire il firewall.
 - **Come si accede:** a ogni avvio InsideApp scrive un file di avvio in `.cache/gui/`, leggibile solo dal tuo utente. Il file contiene un codice monouso valido 60 secondi, che non compare mai nel terminale né negli argomenti dei processi. Il browser lo scambia con un cookie di sessione `HttpOnly` e `SameSite=Strict`.

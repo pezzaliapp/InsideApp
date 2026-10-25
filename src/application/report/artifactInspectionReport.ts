@@ -1,10 +1,15 @@
 import type { ArtifactInspectionResult } from "../../domain/artifactInspection.js";
-import {
+import { artifactInspectionResultSchema } from "../../domain/artifactInspection.js";
+import type {
   ReportClaimCollector,
-  type ReportEvidenceReference,
-  type ReportSection,
+  ReportEvidenceReference,
 } from "../../domain/report/insideAppReport.js";
-import { quoted, type RecordContext } from "./reportText.js";
+import {
+  formatBytes,
+  quoted,
+  type RecordContext,
+  type ReportClaimBuilder,
+} from "./reportText.js";
 
 type Inventory =
   ArtifactInspectionResult["substeps"][number]["evidence"]["normalized_result"];
@@ -29,6 +34,14 @@ const KNOWN_HYPOTHESES: Readonly<Record<string, string>> = {
     "Il file PE può contenere codice .NET (metadati CLI) o codice nativo: i soli byte dell'inventario non permettono di distinguerli.",
   "The artifact may contain a recoverable JavaScript application graph.":
     "Il file può contenere un'applicazione JavaScript ricostruibile.",
+};
+
+/** Engine hypotheses and the supplement operation that settles each one. */
+const HYPOTHESIS_RESOLVERS: Readonly<Record<string, string>> = {
+  "The PE artifact may contain managed CLI metadata or native code; inventory bytes alone do not distinguish them.":
+    "inspect_managed_artifact",
+  "The artifact may contain a recoverable JavaScript application graph.":
+    "analyze_javascript_application",
 };
 
 const UNEXPLORED_REASONS: Readonly<
@@ -57,8 +70,28 @@ const inventoryEvidence = (
   additional_occurrences: 0,
 });
 
-const formatBytes = (bytes: number): string =>
-  `${String(bytes).replace(/\B(?=(\d{3})+(?!\d))/gu, ".")} byte`;
+/** Sum of inventoried file sizes; partial coverage is stated, never hidden. */
+const addDirectorySize = (
+  inventory: Inventory,
+  evidence: ReportEvidenceReference,
+  collector: ReportClaimCollector,
+): void => {
+  const sizes = new Map(
+    inventory.nodes.map((node) => [node.artifact_id, node.size] as const),
+  );
+  let files = 0;
+  let bytes = 0;
+  for (const occurrence of inventory.occurrences)
+    if (occurrence.entry_kind === "file" && occurrence.artifact_id !== null) {
+      files += 1;
+      bytes += sizes.get(occurrence.artifact_id) ?? 0;
+    }
+  collector.add("summary", {
+    kind: "observed",
+    statement: `Dimensione misurata dei file inventariati: ${formatBytes(bytes)} in ${files} file${inventory.coverage.status === "complete" ? "" : " (misura parziale: non tutte le parti della cartella sono state esaminate)"}.`,
+    evidence,
+  });
+};
 
 const addInventoryFacts = (
   inventory: Inventory,
@@ -80,9 +113,12 @@ const addInventoryFacts = (
   );
   collector.add("summary", {
     kind: "observed",
-    statement: `Formato riconosciuto: ${quoted(manifest.root_format)}${root === undefined ? "" : `, dimensione ${formatBytes(root.size)}`}.`,
+    statement: `Formato riconosciuto: ${quoted(manifest.root_format)}${root === undefined || manifest.root_format === "directory" ? "" : `, dimensione ${formatBytes(root.size)}`}.`,
     evidence: rootEvidence,
   });
+  // A directory node has no byte size of its own: measure its inventoried files.
+  if (manifest.root_format === "directory")
+    addDirectorySize(inventory, rootEvidence, collector);
   collector.add("summary", {
     kind: "observed",
     statement: `L'inventario contiene ${manifest.occurrence_count} ${manifest.occurrence_count === 1 ? "elemento" : "elementi"}${manifest.node_count === manifest.occurrence_count ? "" : ` (${manifest.node_count} contenuti distinti)`}.`,
@@ -130,7 +166,11 @@ const addInspectionFindings = (
   collector: ReportClaimCollector,
 ): void => {
   const rootSha256 = inventory.manifest.root_sha256;
-  for (const hypothesis of result.hypotheses)
+  for (const hypothesis of result.hypotheses) {
+    // A supplement that answered the question replaces the guess.
+    const resolver = HYPOTHESIS_RESOLVERS[hypothesis.statement];
+    if (resolver !== undefined && record.resolvedOperations.has(resolver))
+      continue;
     collector.add("summary", {
       kind: "hypothesis",
       statement: KNOWN_HYPOTHESES[hypothesis.statement] ?? hypothesis.statement,
@@ -141,6 +181,7 @@ const addInspectionFindings = (
         `hypothesis/${hypothesis.confidence}`,
       ),
     });
+  }
   for (const contradiction of result.contradictions)
     collector.add("security", {
       kind: "observed",
@@ -152,10 +193,15 @@ const addInspectionFindings = (
         "observed/integrity-contradiction",
       ),
     });
-  for (const branch of result.unexplored_branches)
+  for (const branch of result.unexplored_branches) {
+    const probe = branch.next_probe?.operation;
+    if (probe !== undefined && record.resolvedOperations.has(probe)) continue;
     collector.add("limits", {
       kind: "unknown",
-      statement: `${UNEXPLORED_REASONS[branch.reason]}${branch.next_probe === null ? "" : `; passo successivo suggerito: ${quoted(branch.next_probe.operation)}`}.`,
+      statement:
+        probe === "open_binary"
+          ? "La decompilazione e l'analisi delle funzioni del codice nativo richiedono un motore esterno gratuito come Ghidra, da installare a parte: non fanno parte di questo rapporto."
+          : `${UNEXPLORED_REASONS[branch.reason]}${probe === undefined ? "" : `; passo successivo suggerito: ${quoted(probe)}`}.`,
       evidence: inventoryEvidence(
         branch.evidence_id,
         null,
@@ -163,6 +209,7 @@ const addInspectionFindings = (
         `unknown/${branch.reason}`,
       ),
     });
+  }
   if (
     inventory.coverage.status !== "complete" ||
     result.coverage.status !== "complete-within-substeps"
@@ -181,14 +228,15 @@ const addInspectionFindings = (
 };
 
 /** Build report sections from one validated provider-neutral inspection. */
-export const artifactInspectionReportSections = (
-  result: ArtifactInspectionResult,
-  record: RecordContext,
-): readonly ReportSection[] => {
-  const collector = new ReportClaimCollector();
+/** Claims of one provider-neutral inspection, parsed by its owner. */
+export const artifactInspectionClaims: ReportClaimBuilder = (
+  collector,
+  value,
+  record,
+) => {
+  const result = artifactInspectionResultSchema.parse(value);
   const substep = result.substeps[0]!;
   const inventory = substep.evidence.normalized_result;
   addInventoryFacts(inventory, substep.evidence_id, collector);
   addInspectionFindings(result, inventory, record, collector);
-  return collector.sections();
 };
