@@ -13,7 +13,7 @@ import { resolveTypeScriptCompiler } from "../../../scripts/run-typescript.mjs";
 
 const repository = fileURLToPath(new URL("../../../", import.meta.url));
 const turbo = join(repository, "scripts/run-turbo.mjs");
-const reportScript = join(repository, "scripts/ci/static-check-report.mjs");
+const reportScript = join(repository, "scripts/static-check-report.mjs");
 const rootConfigSchema = z.object({
   globalDependencies: z.array(z.string()).optional(),
   globalPassThroughEnv: z.array(z.string()).optional(),
@@ -127,9 +127,9 @@ it("restores a real lint report across cold, warm, and fresh consumer checkouts"
   const producer = await createTestTempDirectory("rea-static-cache-producer-");
   const consumer = await createTestTempDirectory("rea-static-cache-consumer-");
   const cache = await createTestTempDirectory("rea-static-cache-store-");
-  const script = "node scripts/ci/static-check-report.mjs lint";
+  const script = "node scripts/static-check-report.mjs lint";
   for (const root of [producer, consumer]) {
-    await mkdir(join(root, "scripts/ci"), { recursive: true });
+    await mkdir(join(root, "scripts"), { recursive: true });
     await mkdir(join(root, "src"), { recursive: true });
     await symlink(
       join(repository, "node_modules"),
@@ -148,7 +148,7 @@ it("restores a real lint report across cold, warm, and fresh consumer checkouts"
     );
     await writeFile(join(root, "src/check.js"), "export const ready = true;\n");
     await writeFile(
-      join(root, "scripts/ci/static-check-report.mjs"),
+      join(root, "scripts/static-check-report.mjs"),
       await readFile(reportScript, "utf8"),
     );
     await workflowGit(root, ["init", "--initial-branch=main"]);

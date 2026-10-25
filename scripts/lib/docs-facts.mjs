@@ -115,21 +115,18 @@ export const documentationFactIssues = async (root, catalog) => {
   for (const path of readmePaths) {
     const content = await readFile(join(root, path), "utf8");
     readmes.set(path, content);
-    requireText(issues, path, content, "MCP-tool_catalog");
     if (path === "README.md") {
-      requireText(
-        issues,
-        path,
-        content,
-        "(docs/installation.md#supported-agents)",
-      );
-      requireText(issues, path, content, "(docs/installation.md#mcp-registry)");
-      requireText(
-        issues,
-        path,
-        content,
+      // InsideApp onboarding: project-scoped MCP, local launcher, no install
+      // scripts, and the derivation and lawful-use notices.
+      for (const expected of [
+        "(.mcp.json)",
+        "./scripts/insideapp.sh",
+        "npm ci --ignore-scripts",
+        "(NOTICE.md)",
+        "(AVVERTENZE.md)",
         "(docs/mcp-contracts.md#generated-catalog)",
-      );
+      ])
+        requireText(issues, path, content, expected);
     }
   }
   const canonicalLinks = readmeLinkTargets(
@@ -137,9 +134,13 @@ export const documentationFactIssues = async (root, catalog) => {
     "README.md",
     readmes.get("README.md") ?? "",
   );
-  const languageInventory = JSON.parse(
-    await readFile(join(root, "website/locales/languages.json"), "utf8"),
-  );
+  // Translated editions and their language inventory are optional.
+  const languageInventory =
+    readmePaths.length === 1
+      ? []
+      : JSON.parse(
+          await readFile(join(root, "website/locales/languages.json"), "utf8"),
+        );
   const readmeLanguages = new Map(
     languageInventory.map(({ readme, code }) => [readme, code]),
   );

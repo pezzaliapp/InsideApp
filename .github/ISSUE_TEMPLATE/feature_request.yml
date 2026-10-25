@@ -1,5 +1,5 @@
 name: Feature request
-description: Propose a focused improvement to REA
+description: Propose a focused improvement to InsideApp
 title: "[Feature] "
 labels:
   - enhancement
@@ -14,7 +14,7 @@ body:
         Use concrete examples when available, distinguish current limitations
         from proposed behavior, and leave unmeasured impact or unknowns explicit.
 
-        Read the [contribution scope](https://github.com/morluto/rea/blob/main/CONTRIBUTING.md#contribution-scope).
+        Read the [contribution scope](https://github.com/pezzaliapp/InsideApp/blob/main/CONTRIBUTING.md#contribution-scope).
         Maintainers can help resolve scope and technical questions. Unresolved
         boundaries block integration, not opening a request for discussion.
 
@@ -25,7 +25,7 @@ body:
       options:
         - label: I searched the open and closed issues and pull requests for a related proposal.
           required: true
-        - label: I understand the [contribution scope](https://github.com/morluto/rea/blob/main/CONTRIBUTING.md#contribution-scope) must be reviewed before integration; open questions are welcome here.
+        - label: I understand the [contribution scope](https://github.com/pezzaliapp/InsideApp/blob/main/CONTRIBUTING.md#contribution-scope) must be reviewed before integration; open questions are welcome here.
           required: true
         - label: This request does not include credentials, private samples, or sensitive target data.
           required: true
@@ -128,7 +128,7 @@ body:
     id: alternatives
     attributes:
       label: Alternatives considered
-      description: Describe existing REA operations, upstream tools, or workarounds considered and why they do not meet the need.
+      description: Describe existing InsideApp operations, upstream tools, or workarounds considered and why they do not meet the need.
 
   - type: textarea
     id: possible-direction

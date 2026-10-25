@@ -7,6 +7,9 @@ export const prepareCliProcessEnvironment = (
   packageVersion,
 ) => {
   environment.REA_PACKAGE_VERSION = packageVersion;
+  // InsideApp is a local git distribution. Incur otherwise spawns a detached
+  // process that queries the npm registry for a same-named package once a day.
+  environment.NO_UPDATE_NOTIFIER = "1";
   // Windows home lookup throws for an empty USERPROFILE. Dependencies resolve
   // home during import, before REA's own resolver can apply its account fallback.
   if (platform === "win32" && environment.USERPROFILE === "") {

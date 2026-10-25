@@ -21,14 +21,6 @@ const sourceDependencyIsAvailable = async (path) => {
   }
 };
 
-// Runtime and type checking must both see the patched release dependency.
-// Published installs omit source and development dependencies.
-if (await sourceDependencyIsAvailable("release-please/package.json")) {
-  const { applyReleasePleasePatch } =
-    await import("./lib/release-proposal.mjs");
-  await applyReleasePleasePatch();
-}
-
 if (
   process.env.HUSKY !== "0" &&
   (await sourceDependencyIsAvailable("husky/index.js"))

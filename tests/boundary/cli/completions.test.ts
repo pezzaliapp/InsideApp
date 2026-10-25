@@ -114,15 +114,15 @@ workspaceCliTest.skipIf(process.platform === "win32")(
         "--norc",
         "-c",
         `
-rea() { "$REA_TEST_NODE" "$REA_TEST_DISPATCHER" "$@"; }
-eval "$(rea completions bash)" || exit
-COMP_WORDS=(rea mcp "")
+insideapp() { "$REA_TEST_NODE" "$REA_TEST_DISPATCHER" "$@"; }
+eval "$(insideapp completions bash)" || exit
+COMP_WORDS=(insideapp mcp "")
 COMP_CWORD=2
-_incur_complete_rea || exit
+_incur_complete_insideapp || exit
 printf 'mcp=%s\\n' "\${COMPREPLY[*]}"
-COMP_WORDS=(rea instructions --format "")
+COMP_WORDS=(insideapp instructions --format "")
 COMP_CWORD=3
-_incur_complete_rea || exit
+_incur_complete_insideapp || exit
 printf 'format=%s\\n' "\${COMPREPLY[*]}"
 `,
       ],

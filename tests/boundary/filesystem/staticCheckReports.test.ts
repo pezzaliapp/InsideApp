@@ -8,7 +8,7 @@ import { z } from "zod";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 
 const script = fileURLToPath(
-  new URL("../../../scripts/ci/static-check-report.mjs", import.meta.url),
+  new URL("../../../scripts/static-check-report.mjs", import.meta.url),
 );
 const repository = fileURLToPath(new URL("../../../", import.meta.url));
 const fixture = async () => {

@@ -188,6 +188,60 @@ describe("doctor configuration dispatch", () => {
   );
 });
 
+describe("InsideApp local distribution dispatch", () => {
+  workspaceCliTest(
+    "refuses global-configuration and registry commands before importing the CLI runtime",
+    async ({ processes, workspace }) => {
+      const imported = "CLI command runtime imported";
+      await installCliRuntime(
+        workspace,
+        `process.stderr.write(${JSON.stringify(`${imported}\n`)}); export const closeCliJavaScriptResources = () => {}; export const createCli = () => ({ serve: (args, options) => options.stdout(JSON.stringify({ adapter: "cli", args, updateNotifier: process.env.NO_UPDATE_NOTIFIER })) });\n`,
+      );
+      await workspace.write(
+        "dist/cli-runtime/cliOutput.js",
+        `export * from ${JSON.stringify(pathToFileURL(resolve("dist/cli-runtime/cliOutput.js")).href)};\n`,
+      );
+      const { NO_UPDATE_NOTIFIER: _ambient, ...environment } = process.env;
+      const invoke = (args: readonly string[]) =>
+        processes.run(
+          process.execPath,
+          [workspace.path("scripts/rea.mjs"), ...args],
+          { cwd: workspace.root, env: { ...environment, COMPLETE: "" } },
+        );
+
+      for (const args of [
+        ["setup"],
+        ["--json", "setup", "--yes"],
+        ["uninstall"],
+        ["update"],
+        ["--update"],
+        ["--format", "json", "--update"],
+        ["providers", "--update"],
+        ["mcp", "add"],
+        ["skills", "add"],
+      ]) {
+        const result = await invoke(args);
+        expect(result.exitCode, JSON.stringify(args)).toBe(1);
+        expect(result.stdout, JSON.stringify(args)).toBe("");
+        expect(result.stderr, JSON.stringify(args)).toContain(
+          "non è disponibile",
+        );
+        expect(result.stderr, JSON.stringify(args)).not.toContain(imported);
+      }
+
+      for (const args of [["providers"], ["capabilities", "--json"]]) {
+        const result = await invoke(args);
+        expect(result.exitCode, JSON.stringify(args)).toBe(0);
+        expect(JSON.parse(result.stdout)).toEqual({
+          adapter: "cli",
+          args,
+          updateNotifier: "1",
+        });
+      }
+    },
+  );
+});
+
 describe("executable dispatcher", () => {
   workspaceCliTest(
     "does not append recovery output after delegated stdout has begun",
@@ -259,9 +313,9 @@ describe("executable dispatcher", () => {
         adapter: "cli",
         args: ["--filter-output", "mcp", "doctor"],
       });
-      await expect(invoke(["mcp", "add"])).resolves.toEqual({
+      await expect(invoke(["mcp", "help"])).resolves.toEqual({
         adapter: "cli",
-        args: ["mcp", "add"],
+        args: ["mcp", "help"],
       });
       await expect(invoke(["--mcp", "extra"])).resolves.toEqual({
         adapter: "cli",
@@ -282,9 +336,9 @@ describe("executable dispatcher", () => {
         args: ["--http"],
         stdoutIsTerminal: false,
       });
-      await expect(invoke(["mcp", "add", "--http"])).resolves.toEqual({
+      await expect(invoke(["mcp", "help", "--http"])).resolves.toEqual({
         adapter: "cli",
-        args: ["mcp", "add", "--http"],
+        args: ["mcp", "help", "--http"],
       });
     },
   );
@@ -315,11 +369,11 @@ describe("executable dispatcher", () => {
         expect(result).toMatchObject({
           exitCode: 1,
           stderr: expect.stringContaining(
-            "REA's compiled runtime is missing. Run `npm ci && npm run build:cached` in",
+            "InsideApp: manca il runtime compilato. In",
           ),
         });
         expect(result.stderr).toContain(
-          "If this is an installed package, reinstall rea-agents.",
+          "esegui `npm ci --ignore-scripts && npm run build:cached` con il Node della toolchain isolata",
         );
         expect(result).toMatchObject({
           stderr: expect.not.stringContaining("ERR_MODULE_NOT_FOUND"),

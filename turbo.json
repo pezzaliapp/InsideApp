@@ -1,5 +1,6 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
+  "agentGuidance": false,
   "cacheMaxAge": "7d",
   "cacheMaxSize": "500MB",
   "globalDependencies": [".nvmrc", ".npmrc"],
@@ -138,7 +139,7 @@
         ".jscpd.json",
         "package.json",
         "package-lock.json",
-        "scripts/ci/static-check-report.mjs",
+        "scripts/static-check-report.mjs",
         "src/**",
         "tests/**"
       ],

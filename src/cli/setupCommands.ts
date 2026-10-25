@@ -44,7 +44,8 @@ const registerSetupCommand = (
   environment: Readonly<NodeJS.ProcessEnv>,
 ): void => {
   cli.command(CLI_COMMANDS.setup, {
-    description: "Configure agent integrations and optional analysis providers",
+    description:
+      "Non disponibile in InsideApp (usa il file .mcp.json di progetto)",
     outputPolicy: "agent-only",
     options: z.object({
       yes: z
@@ -99,7 +100,7 @@ const registerDoctorCommand = (
   environment: Readonly<NodeJS.ProcessEnv>,
 ): void => {
   cli.command(CLI_COMMANDS.doctor, {
-    description: "Check whether REA is ready",
+    description: "Verifica se InsideApp è pronto",
     options: z.object({
       target: z.string().optional().describe("Optional app path to check"),
       client: z
@@ -139,7 +140,8 @@ const registerMaintenanceCommands = (
   environment: Readonly<NodeJS.ProcessEnv>,
 ): void => {
   cli.command(CLI_COMMANDS.uninstall, {
-    description: "Remove REA-owned agent configuration and skill files",
+    description:
+      "Non disponibile in InsideApp (modificherebbe configurazioni globali)",
     options: z.object({
       purgeData: z
         .boolean()
@@ -166,8 +168,7 @@ const registerMaintenanceCommands = (
       ),
   });
   cli.command(CLI_COMMANDS.update, {
-    description:
-      "Update this REA installation and verify the installed release",
+    description: "Non disponibile in InsideApp (aggiorna con git pull)",
     run: ({ formatExplicit }) =>
       logCliCommand(
         logger,

@@ -57,7 +57,7 @@ export const inspectIdaRegistration = async (
             : "IDA MCP registration is not configured.",
         remediation: valid
           ? null
-          : "Set REA_IDA_MCP_CONFIG to your upstream IDA MCP registration JSON; see docs/ida-provider.md.",
+          : "IDA Pro è escluso da InsideApp: per l'analisi nativa configura Ghidra con GHIDRA_INSTALL_DIR.",
         classification:
           path === undefined ? "missing_analysis_engine" : "config_drift",
       },

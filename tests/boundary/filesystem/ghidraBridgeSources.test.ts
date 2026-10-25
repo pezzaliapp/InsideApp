@@ -13,8 +13,6 @@ import {
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { expect, it } from "vitest";
-import { parse as parseYaml } from "yaml";
-import { z } from "zod";
 
 import { GHIDRA_BRIDGE_SOURCES } from "../../../src/ghidra/GhidraBridgeSources.js";
 import {
@@ -229,41 +227,16 @@ it("rejects an omitted auxiliary source at the actual package verification bound
   });
 });
 
-it("binds the workflow SDK pin and verified compile mode to the canonical release", async () => {
-  const { jobs } = z
-    .object({
-      jobs: z.object({
-        "ghidra-bridge-sources": z.object({
-          env: z.object({
-            GHIDRA_RELEASE_URL: z.string(),
-            GHIDRA_RELEASE_SHA256: z.string(),
-          }),
-          steps: z.array(
-            z.object({ run: z.string().optional() }).passthrough(),
-          ),
-        }),
-      }),
-    })
-    .parse(
-      parseYaml(
-        await readFile(
-          resolve(".github/workflows/ghidra-bridge-sources.yml"),
-          "utf8",
-        ),
-      ),
-    );
-  const job = jobs["ghidra-bridge-sources"];
-  const pinIndex = job.steps.findIndex((step) =>
-    step.run?.includes("--check-sdk-pin"),
-  );
-  const downloadIndex = job.steps.findIndex((step) =>
-    step.run?.includes("curl "),
-  );
-  expect(pinIndex).toBeGreaterThanOrEqual(0);
-  expect(downloadIndex).toBeGreaterThan(pinIndex);
-  expect(job.steps.some((step) => step.run?.includes("--verified-sdk"))).toBe(
-    true,
-  );
+it("accepts only the checksum-pinned official Ghidra SDK release", async () => {
+  // The official 12.1.4 archive digest previously pinned by REA's bridge job.
+  const job = {
+    env: {
+      GHIDRA_RELEASE_URL:
+        "https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_12.1.4_build/ghidra_12.1.4_PUBLIC_20260921.zip",
+      GHIDRA_RELEASE_SHA256:
+        "ddac49f903da9d5bac833e5cc79395098b9c33cfd3279be5f31bd00387d2d4db",
+    },
+  };
   const command = [
     "scripts/verify-ghidra-bridge-sources.mjs",
     "--check-sdk-pin",

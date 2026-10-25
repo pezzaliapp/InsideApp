@@ -8,7 +8,7 @@ const CLI_INTEGRATION_TIMEOUT_MS = 60_000;
 
 describe("CLI skill lifecycle boundary", () => {
   workspaceCliTest(
-    "does not expose the unmanaged Incur skill generator",
+    "refuses the global Incur skill installer without touching HOME",
     async ({ cli, workspace }) => {
       const help = await cli.run({
         arguments: ["--help"],
@@ -22,7 +22,9 @@ describe("CLI skill lifecycle boundary", () => {
         environment: workspace.environment,
       });
       expect(result.exitCode).toBe(1);
-      expect(result.stdout).toContain("COMMAND_NOT_FOUND");
+      expect(result.stderr).toContain(
+        "InsideApp: 'skills add' non è disponibile",
+      );
       await expect(readdir(workspace.home)).resolves.toEqual([]);
     },
     CLI_INTEGRATION_TIMEOUT_MS,

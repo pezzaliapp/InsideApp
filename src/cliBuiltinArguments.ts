@@ -123,6 +123,57 @@ export const productionMcpDoctorArguments = (
   return normalized.filter((_, index) => index !== mcp && index !== doctor);
 };
 
+/**
+ * InsideApp is distributed only as a local git checkout. These commands would
+ * write global agent configuration, install packages globally, or run a
+ * registry package through npx, any of which could execute a foreign package
+ * published under InsideApp's name.
+ */
+const LOCAL_DISTRIBUTION_REFUSALS: readonly {
+  readonly command: readonly string[];
+  readonly reason: string;
+}[] = [
+  {
+    command: ["setup"],
+    reason:
+      "scrive configurazioni globali degli agent. Usa il file .mcp.json di progetto (vedi README.md)",
+  },
+  {
+    command: ["uninstall"],
+    reason:
+      "modifica configurazioni globali degli agent. Rimuovi la cartella del progetto e il suo .mcp.json",
+  },
+  {
+    command: ["update"],
+    reason: "installerebbe un pacchetto globale da npm. Aggiorna con git pull",
+  },
+  {
+    command: ["mcp", "add"],
+    reason:
+      "eseguirebbe npx add-mcp e scriverebbe configurazioni globali. Usa il file .mcp.json di progetto",
+  },
+  {
+    command: ["skills", "add"],
+    reason:
+      "installerebbe skill globali tramite npx. Le skill di InsideApp sono in .claude/skills",
+  },
+];
+
+/** Explain why a normalized invocation is unavailable in the local distribution. */
+export const localDistributionRefusal = (
+  normalized: readonly string[],
+): string | undefined => {
+  if (normalized.includes("--update"))
+    return "InsideApp: --update non è disponibile perché installerebbe un pacchetto globale da npm. Aggiorna con git pull.";
+  const { command } = splitIncurBuiltinArguments(normalized);
+  const refusal = LOCAL_DISTRIBUTION_REFUSALS.find((candidate) =>
+    candidate.command.every((token, index) => command[index] === token),
+  );
+  return refusal === undefined
+    ? undefined
+    : `InsideApp: '${refusal.command.join(" ")}' non è disponibile perché ${refusal.reason}.`;
+};
+
 /** Incur accepts the schema key and its kebab-case spelling. */
 const FLAGS = ["--sensitive-value", "--sensitiveValue"] as const;
 

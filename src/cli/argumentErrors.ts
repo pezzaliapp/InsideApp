@@ -4,7 +4,7 @@ import type { CliInstance } from "./types.js";
 import { visitRegisteredCommands } from "./visitRegisteredCommands.js";
 
 const ARGUMENT_GUIDANCE =
-  "REA could not read the command arguments. Check the named argument and its expected type, then try again.";
+  "InsideApp non ha potuto leggere gli argomenti del comando. Controlla l'argomento indicato e il tipo previsto, poi riprova.";
 
 /** Preserve parser correction fields without embedding its serialized cause. */
 export const presentCliArgumentErrors = (cli: CliInstance): void => {

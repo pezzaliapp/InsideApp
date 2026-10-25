@@ -391,54 +391,6 @@ describe("existing REA integration maintenance", () => {
   });
 });
 
-describe("updated executable maintenance planning", () => {
-  it("runs real setup as a noninteractive dry run and creates no new integrations or backups", async () => {
-    const configPath = await writeClient("codex", staleCodex);
-    const untouched = await writeClient("claude_code", '{"mcpServers":{}}');
-    const skillContent = `---\nname: ${PRODUCT_IDENTITY.skillName}\nmetadata:\n  version: "1"\n---\n# REA\n`;
-    const skillPath = await writeSkill(skillContent);
-    vi.stubEnv("npm_command", "exec");
-    const result = await planIntegrationMaintenance(
-      home,
-      entryPoint,
-      process.env,
-      (command) => runUpdateCommand(command, process.env),
-    );
-    expect(result).toMatchObject({
-      status: "planned",
-      scope: {
-        clients: ["codex"],
-        skill: true,
-        skillDestinations: [{ client: "shared", path: dirname(skillPath) }],
-      },
-    });
-    if (result.status !== "planned") throw new Error(JSON.stringify(result));
-    expect(result.plannedActions).toEqual([
-      expect.objectContaining({
-        id: "configure_client:codex",
-        kind: "configure_client",
-      }),
-      expect.objectContaining({
-        id: "install_skill",
-        kind: "install_skill",
-        target: dirname(skillPath),
-      }),
-    ]);
-    expect(await readFile(configPath, "utf8")).toBe(staleCodex);
-    expect(await readFile(untouched, "utf8")).toBe('{"mcpServers":{}}');
-    expect(await readFile(skillPath, "utf8")).toBe(skillContent);
-    await expect(access(`${configPath}.rea.backup`)).rejects.toMatchObject({
-      code: "ENOENT",
-    });
-    await expect(access(`${skillPath}.rea.backup`)).rejects.toMatchObject({
-      code: "ENOENT",
-    });
-    await expect(
-      access(join(home, ".claude", "skills", PRODUCT_IDENTITY.skillName)),
-    ).rejects.toMatchObject({ code: "ENOENT" });
-  });
-});
-
 describe("update subprocess boundaries", () => {
   cliTest("exposes update in CLI help", async ({ cli }) => {
     const help = await cli.run({

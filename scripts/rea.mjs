@@ -57,7 +57,7 @@ const runtimeFiles = [
 
 if (!(await compiledRuntimeExists(runtimeFiles))) {
   process.stderr.write(
-    `REA's compiled runtime is missing. Run \`npm ci && npm run build:cached\` in ${packageRoot} to install dependencies and build REA, then restart it. If this is an installed package, reinstall rea-agents.\n`,
+    `InsideApp: manca il runtime compilato. In ${packageRoot} esegui \`npm ci --ignore-scripts && npm run build:cached\` con il Node della toolchain isolata (vedi README.md), poi riavvia.\n`,
   );
   process.exitCode = 1;
 } else if (isMcpMode) {
@@ -107,6 +107,9 @@ if (!(await compiledRuntimeExists(runtimeFiles))) {
     process.stdout.isTTY === true,
   );
   const configurationError = cliConfigurationError(process.env);
+  const localDistributionRefusal = isShellCompletion
+    ? undefined
+    : builtinArguments.localDistributionRefusal(cliArgs);
   let dispatchFailure;
   let closeCliJavaScriptResources;
   // Incur can exit from the callback below before this function returns.
@@ -115,7 +118,10 @@ if (!(await compiledRuntimeExists(runtimeFiles))) {
   try {
     // Doctor is the readiness report for this failure. Other commands still stop
     // here so they do not run with an unusable log level.
-    if (
+    if (localDistributionRefusal !== undefined) {
+      process.stderr.write(`${localDistributionRefusal}\n`);
+      process.exitCode = 1;
+    } else if (
       configurationError !== undefined &&
       (isShellCompletion ||
         builtinArguments.splitIncurBuiltinArguments(cliArgs).command[0] !==

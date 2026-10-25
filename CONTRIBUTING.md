@@ -1,5 +1,13 @@
 # Contributing to REA
 
+> **InsideApp — PezzaliAPP.** Questa guida è quella originale di REA e descrive
+> l'architettura e le convenzioni di sviluppo, ancora valide. In InsideApp
+> valgono inoltre queste regole: nessun workflow GitHub attivo, nessuna
+> pubblicazione su npm o su registry MCP, nessuna installazione globale,
+> dipendenze installate con `npm ci --ignore-scripts`, nessun componente che
+> generi costi. Le segnalazioni vanno al repository
+> [pezzaliapp/InsideApp](https://github.com/pezzaliapp/InsideApp), non a REA.
+
 REA welcomes focused bug fixes, documentation improvements, tests, and reverse-engineering workflows. For large contract or architecture changes, explain the intended scope and link the relevant issue or design discussion.
 
 ## Choosing a contribution
@@ -329,7 +337,8 @@ CI diagnosis. Packaging/setup/distribution changes additionally require
 matching real-provider lane. State which host/provider workflows ran.
 
 For CI/test correctness, drift, or performance investigations, use the
-[`rea-ci-tests-audit` contributor skill](.agents/skills/rea-ci-tests-audit/SKILL.md).
+[`rea-ci-tests-audit` contributor skill](.agents/skills/rea-ci-tests-audit/SKILL.md)
+(its GitHub workflow guidance does not apply to InsideApp, which has no CI).
 It guides reproduction and comparable measurements before changing checks.
 
 `check:pr` reuses build and static-check outputs while executing the test suite
@@ -394,19 +403,8 @@ Generated fixtures and manifests remain ignored.
 
 ## Maintainer release checklist
 
-Use the [release guide](docs/releasing.md). Main pushes automatically refresh a
-Release Please PR with the next version and changelog. Review its migration
-notes, wait for the current CI checks to pass, and merge it into main to publish.
-
-The Release workflow validates and tags that merge; both publishers build its
-exact SHA. Ordinary main pushes cannot publish packages. An optional manual
-`release/VERSION` checkpoint retains explicit preparation and publication.
-
-For grouped release notes with verified contributor thanks, use the repository's
-`rea-changelog-update` skill in `.agents/skills/rea-changelog-update/`. Its inventory,
-credit checks, and finalization process are described in the release guide.
-
-Keep new implementation commits on main for the next release. The workflow
-owns packaged-artifact verification, npm publication, the published CLI/MCP
-canary, and MCP Registry publication. Sync manual checkpoint metadata back to
-main after publication; see the guide for recovery and verification.
+InsideApp has no automated release, npm publication, MCP Registry publication,
+or deploy pipeline: REA's Release Please configuration, release workflows, and
+their scripts were removed. Changes reach users through `git pull`; record
+notable changes in `CHANGELOG.md` by hand. See [.github/CI-LOCALE.md](.github/CI-LOCALE.md)
+before introducing any CI.

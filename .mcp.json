@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "insideapp": {
+      "type": "stdio",
+      "command": "./scripts/insideapp.sh",
+      "args": ["mcp"]
+    }
+  }
+}

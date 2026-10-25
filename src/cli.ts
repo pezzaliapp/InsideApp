@@ -92,9 +92,10 @@ export const createCli = (
     "cli",
     level?.ok === true ? level.value : "silent",
   );
-  const cli = Cli.create(PRODUCT_IDENTITY.cliBinary, {
+  const cli = Cli.create(PRODUCT_IDENTITY.displayCommand, {
     version: PRODUCT_IDENTITY.packageVersion,
-    description: "Reverse engineer anything from your terminal or agent.",
+    description:
+      "InsideApp — PezzaliAPP: analisi locale e lecita di app e software propri o autorizzati.",
     mcp: {
       command: npxRegistrationCommand().join(" "),
       instructions:
@@ -106,7 +107,7 @@ export const createCli = (
       // installer so ambiguous flags cannot bypass REA's verified workflow.
       install: () => {
         throw new Error(
-          "Use 'rea update' to update the identified installation. The '--update' alias accepts only global output flags.",
+          "InsideApp si aggiorna con git pull: --update non è disponibile.",
         );
       },
     },

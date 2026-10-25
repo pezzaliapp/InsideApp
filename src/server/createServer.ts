@@ -416,6 +416,7 @@ const createMcpServer = (
   new EvidenceMcpServer(
     {
       name: PRODUCT_IDENTITY.mcpServerKey,
+      title: `${PRODUCT_IDENTITY.displayName} — PezzaliAPP`,
       version: PRODUCT_IDENTITY.packageVersion,
     },
     {

@@ -77,7 +77,7 @@ export const createAgentEvaluationFixtures = async (
       join(javascriptShapeRight, "parser.mjs"),
     ),
     cp(
-      join(repositoryRoot, "website/public/examples/notes-electron"),
+      join(repositoryRoot, "tests/fixtures/examples/notes-electron"),
       notesDirectory,
       { recursive: true },
     ),

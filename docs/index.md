@@ -2,48 +2,33 @@
 layout: home
 
 hero:
-  name: REA
-  text: Reverse Engineer Anything
-  tagline: Understand binaries, applications, and runtime behavior with one CLI and MCP server.
+  name: InsideApp
+  text: PezzaliAPP
+  tagline: Analisi locale e lecita di applicazioni e software propri o autorizzati, con CLI e server MCP.
   actions:
     - theme: brand
-      text: Get started
-      link: /installation
+      text: Inizia
+      link: https://github.com/pezzaliapp/InsideApp#installazione-locale
     - theme: alt
-      text: View on GitHub
-      link: https://github.com/morluto/rea
+      text: GitHub
+      link: https://github.com/pezzaliapp/InsideApp
 
 features:
-  - title: Investigate with your agent
-    details: Connect REA to your coding agent, describe the app or feature you want to understand, and follow the evidence.
+  - title: Analizza con Claude Code
+    details: Il server MCP di progetto collega Claude Code a InsideApp; descrivi l'app o la funzionalità da capire e segui le prove.
     link: /mcp-prompts
-  - title: Inspect across formats
-    details: Explore native binaries, JavaScript and Electron apps, .NET assemblies, Android packages, firmware, and websites.
-    link: /installation
-  - title: Keep the evidence
-    details: Analysis runs locally and returns observations, limitations, and unknowns through the CLI and MCP.
+  - title: Molti formati
+    details: Eseguibili nativi, app JavaScript ed Electron, assembly .NET, pacchetti Android e altri artefatti.
+    link: /cli
+  - title: Conserva le prove
+    details: L'analisi gira in locale e restituisce osservazioni, limiti ed elementi sconosciuti.
     link: /mcp-contracts
 ---
 
-## Start with one command
-
-```bash
-npx rea-agents setup
-```
-
-Choose your agent, review the planned changes, and approve setup. Native binary
-analysis can use an existing Hopper, Ghidra, or IDA installation; static
-JavaScript analysis needs no native analysis engine.
-
-For a first result from an extracted JavaScript application or ASAR:
-
-```bash
-npx -y rea-agents@latest analyze-javascript-application /absolute/path/to/app --json
-```
-
-See [installation and setup](./installation.md) for requirements and configuration.
-
-For runtime instrumentation, see the [Frida guide](./frida-instrumentation.md).
+> Documentazione tecnica originale di REA (in inglese), valida anche per
+> InsideApp. Dove compaiono `npx rea-agents`, `rea setup` o `rea update`, in
+> InsideApp usa `./scripts/insideapp.sh` e il file `.mcp.json` di progetto
+> (vedi il README). Hopper, IDA Pro e JEB sono esclusi da InsideApp.
 
 ## Choose a guide
 
@@ -63,10 +48,7 @@ For runtime instrumentation, see the [Frida guide](./frida-instrumentation.md).
 | Use CLI/MCP and retain evidence                     | [CLI](cli.md), [MCP contracts](mcp-contracts.md), [agent prompts](mcp-prompts.md), [obligation ledgers](reconstruction-obligation-ledgers.md)                                                                                                                                                                                                                                                                                                                                           |
 
 For development, use [testing](testing.md), [client verification](client-verification.md),
-[tool design](tool-design.md), [admission limits and recovery](design/limits-and-recovery.md),
-and [releasing](releasing.md).
+[tool design](tool-design.md), and [admission limits and recovery](design/limits-and-recovery.md).
 [Reconstruction readiness](reconstruction-readiness.md) describes a development
 conformance verifier. [The 6.2 migration](migration-6.2.md) records that release's
 compatibility changes; [the roadmap](roadmap.md) tracks future work.
-
-![REA inspecting a native binary in Hopper](./assets/rea-hopper-analysis.png)

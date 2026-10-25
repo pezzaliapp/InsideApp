@@ -181,7 +181,7 @@ const hopperCheck = (
     {
       remediation:
         host.configuredHopperPath === undefined
-          ? "Run rea setup to install Hopper, or set HOPPER_LAUNCHER_PATH."
+          ? "Hopper è escluso da InsideApp: per l'analisi nativa configura Ghidra con GHIDRA_INSTALL_DIR."
           : "Unset or update HOPPER_LAUNCHER_PATH to an executable Hopper launcher.",
       classification:
         host.configuredHopperPath === undefined

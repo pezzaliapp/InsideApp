@@ -21,9 +21,9 @@ upstream texts; they do not change [REA's MIT license](../LICENSE).
 | `upstream-sources.json`                                | Source URLs and SHA-256 digests for the new unchanged reference and supplemental texts. These digests identify the preserved local texts.                                                                                                                                                 |
 
 Additional preserved originals live at
-[evmole/LICENSE](../third_party/evmole/LICENSE),
-[pwndbg/LICENSE.md](../third_party/pwndbg/LICENSE.md), and
-[the website dinosaur notice](../website/public/assets/licenses/dinosaur.txt).
+[evmole/LICENSE](../third_party/evmole/LICENSE) and
+[pwndbg/LICENSE.md](../third_party/pwndbg/LICENSE.md). InsideApp removed REA's
+website and its dinosaur example, together with that example's notice.
 
 ## Collection scope and maintenance
 

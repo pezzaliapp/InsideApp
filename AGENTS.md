@@ -1,3 +1,15 @@
+# InsideApp — PezzaliAPP
+
+This repository is InsideApp, a local-only derivative of REA (see NOTICE.md).
+These rules take precedence over the REA guidance below:
+
+- Use only the isolated toolchain: prefix `PATH="$HOME/.insideapp/toolchain/node-v24.22.1-darwin-arm64/bin:$PATH"`. Never change the global Node, nvm aliases, or other projects.
+- Install with `npm ci --ignore-scripts --no-audit --no-fund --no-update-notifier`. Do not run `scripts/prepare.mjs`, husky, or package lifecycle scripts.
+- Never run `npx`, `npm install -g`, `rea setup`, `update`, `uninstall`, `mcp add`, or `skills add`, and never write global agent configuration. MCP is registered only in the project `.mcp.json`.
+- Do not add GitHub workflows without the owner's approval (rules in `.github/CI-LOCALE.md`), and do not publish packages, deploy sites, or use paid, metered, or credit-card services.
+- Hopper, IDA Pro, and JEB are excluded. Keep LICENSE, THIRD_PARTY_NOTICES.md, licenses/, and upstream attributions intact.
+- User-facing InsideApp documentation is in Italian. Ask before commits or pushes.
+
 # Repository Guidelines
 
 ## Product and Authority

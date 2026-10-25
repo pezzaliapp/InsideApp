@@ -1,11 +1,11 @@
 import { defineConfig } from "vitepress";
 
 export default defineConfig({
-  title: "REA",
+  title: "InsideApp — PezzaliAPP",
   description:
-    "Reverse engineer binaries, applications, and runtime behavior with one CLI and MCP server.",
+    "Analisi locale e lecita di applicazioni e software propri o autorizzati. Derivato da REA (MIT).",
   lang: "en-US",
-  base: "/rea/",
+  base: "/InsideApp/",
   srcExclude: ["readme/**"],
   themeConfig: {
     nav: [
@@ -102,20 +102,18 @@ export default defineConfig({
             text: "Reconstruction readiness",
             link: "/reconstruction-readiness",
           },
-          { text: "Releasing", link: "/releasing" },
         ],
       },
     ],
     search: { provider: "local" },
     socialLinks: [
-      { icon: "github", link: "https://github.com/morluto/rea" },
-      { icon: "discord", link: "https://discord.gg/GkcryMnJDM" },
+      { icon: "github", link: "https://github.com/pezzaliapp/InsideApp" },
     ],
     editLink: {
-      pattern: "https://github.com/morluto/rea/edit/main/docs/:path",
+      pattern: "https://github.com/pezzaliapp/InsideApp/edit/main/docs/:path",
     },
     footer: {
-      message: "Released under the MIT License.",
+      message: "Licenza MIT. Derivato da REA di morluto; non affiliato.",
     },
   },
 });

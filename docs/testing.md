@@ -1374,6 +1374,10 @@ not make native host acceptance unavailable.
 
 ## Native platform baseline in CI
 
+> **InsideApp:** this section describes REA's GitHub CI. InsideApp removed the
+> workflows and the `scripts/ci/` lane planner; the local commands above still
+> apply. See [.github/CI-LOCALE.md](https://github.com/pezzaliapp/InsideApp/blob/main/.github/CI-LOCALE.md).
+
 Pull requests that change only root `README*.md` files, `docs/`, `AGENTS.md`,
 `CONTRIBUTING.md`, `CHANGELOG.md`, `SECURITY.md`, `native/windows/README.md`,
 or the GitHub issue and pull-request templates run formatting and

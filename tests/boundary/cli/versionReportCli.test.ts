@@ -98,6 +98,6 @@ cliTest(
       cwd,
     });
     expect(help.exitCode, help.stderr).toBe(0);
-    expect(help.stdout).toContain("Usage: rea");
+    expect(help.stdout).toContain("Usage: insideapp");
   },
 );

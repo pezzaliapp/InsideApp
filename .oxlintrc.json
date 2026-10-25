@@ -30,7 +30,7 @@
       "files": [
         "scripts/electron-active-hook*.cjs",
         "tests/conformance/readiness/electron/*.js",
-        "website/public/examples/notes-electron/*.js"
+        "tests/fixtures/examples/notes-electron/*.js"
       ],
       "rules": {
         "no-var-requires": "off"

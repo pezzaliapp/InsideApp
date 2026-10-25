@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, unlink } from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -24,17 +24,11 @@ import { createPackageVerifierCommands } from "./lib/verify-package-commands.mjs
 import { withVerifierCleanup } from "./lib/verifier-cleanup.mjs";
 import { completeVerifierRun, createVerifierRun } from "./lib/verifier-run.mjs";
 import {
-  createVerifiedPackageMetadata,
-  retainVerifiedPackage,
-  writeVerifiedPackageManifest,
-} from "./ci/verified-package.mjs";
-import {
   measureMcpStartup,
   profileMcpModuleLoading,
 } from "./lib/mcp-startup-probe.mjs";
 
 const root = process.cwd();
-const retentionDirectory = process.env.REA_VERIFIED_PACKAGE_DIRECTORY;
 const verifierRun = createVerifierRun();
 const workspace = await mkdtemp(join(tmpdir(), "rea-package-"));
 const evidenceRoot = join(workspace, "evidence");
@@ -45,8 +39,6 @@ let mcpModuleLoading;
 let update;
 let repositorySkill;
 let report;
-let retainedPackage;
-let retentionMetadata;
 let commands;
 const releaseWorkspace = () =>
   runStage("workspace cleanup", () =>
@@ -67,27 +59,6 @@ await withVerifierCleanup(async () => {
   commands = await createPackageVerifierCommands({
     workspace: { path: workspace, close: releaseWorkspace },
   });
-  if (retentionDirectory !== undefined && retentionDirectory !== "") {
-    const sourceSha = (
-      await commands.exec("git", ["rev-parse", "HEAD"], { cwd: root })
-    ).stdout.trim();
-    retentionMetadata = createVerifiedPackageMetadata({
-      sourceSha,
-      runId: process.env.GITHUB_RUN_ID,
-      runAttempt: process.env.GITHUB_RUN_ATTEMPT,
-      platform: process.platform,
-      architecture: process.arch,
-      packageVersion: PRODUCT_IDENTITY.packageVersion,
-      nodeVersion: process.version,
-    });
-    await mkdir(retentionDirectory, { recursive: true });
-    await unlink(join(retentionDirectory, "manifest.json")).catch((cause) => {
-      if (
-        !(cause instanceof Error && "code" in cause && cause.code === "ENOENT")
-      )
-        throw cause;
-    });
-  }
   repositorySkill = await runStage("repository skill", () =>
     verifyRepositorySkill({ commands, root, workspace }),
   );
@@ -265,22 +236,10 @@ await withVerifierCleanup(async () => {
     mcpStartup,
     mcpModuleLoading,
   };
-  if (retentionMetadata !== undefined) {
-    retainedPackage = await retainVerifiedPackage({
-      sourceTarball: tarball,
-      directory: retentionDirectory,
-      metadata: retentionMetadata,
-    });
-  }
 }, [() => (commands === undefined ? releaseWorkspace() : commands.close())]);
 const verifierLineage = await runStage("verifier lineage", () =>
   completeVerifierRun(verifierRun),
 );
-if (retainedPackage !== undefined)
-  await writeVerifiedPackageManifest(
-    retainedPackage.directory,
-    retainedPackage.metadata,
-  );
 process.stdout.write(
   `${JSON.stringify({ verifier_run: verifierLineage, ...report })}\n`,
 );

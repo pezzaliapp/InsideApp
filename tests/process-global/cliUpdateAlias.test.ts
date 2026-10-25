@@ -150,7 +150,7 @@ it.each([
   expect(mocks.dependencyInstall).not.toHaveBeenCalled();
 });
 
-it("refuses ambiguous built-in installation rather than selecting another updater", async () => {
+it("refuses built-in installation and points InsideApp users to git pull", async () => {
   const result = await serve(createCli({}), [
     "providers",
     "--update",
@@ -159,7 +159,7 @@ it("refuses ambiguous built-in installation rather than selecting another update
   expect(result.exitCode).toBe(1);
   expect(JSON.parse(result.stdout)).toMatchObject({
     code: "UPDATE_FAILED",
-    message: expect.stringContaining("rea update"),
+    message: expect.stringContaining("git pull"),
   });
   expect(mocks.run).not.toHaveBeenCalled();
   expect(mocks.dependencyInstall).not.toHaveBeenCalled();

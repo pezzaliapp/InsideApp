@@ -453,7 +453,8 @@ describe("doctor", () => {
     ).toEqual({
       node: `Install ${SUPPORTED_NODE_VERSION_PROSE}.`,
       host: "REA supports macOS 12+, Linux distributions with a recognized apt, dnf, or pacman package family, and the experimental Windows x64 Ghidra P0 boundary; automated Hopper setup on Linux additionally requires an x86_64 host running Ubuntu 24.04+, Fedora 41+, Nobara 44+, Arch Linux, CachyOS, or Omarchy.",
-      hopper: "Run rea setup to install Hopper, or set HOPPER_LAUNCHER_PATH.",
+      hopper:
+        "Hopper è escluso da InsideApp: per l'analisi nativa configura Ghidra con GHIDRA_INSTALL_DIR.",
       target: "Supply a readable local app or program path.",
     });
   });

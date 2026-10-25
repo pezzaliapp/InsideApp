@@ -113,7 +113,7 @@ describe("CLI --sensitive-value parser diagnostics", () => {
       expect(JSON.parse(result.stdout)).toMatchObject({
         code: "VALIDATION_ERROR",
         message:
-          "REA could not read the command arguments. Check the named argument and its expected type, then try again.",
+          "InsideApp non ha potuto leggere gli argomenti del comando. Controlla l'argomento indicato e il tipo previsto, poi riprova.",
         fieldErrors: [
           expect.objectContaining({ code: "invalid_value", path: "format" }),
         ],

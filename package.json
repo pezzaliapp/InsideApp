@@ -1,44 +1,32 @@
 {
   "name": "rea-agents",
-  "mcpName": "io.github.morluto/rea",
   "version": "6.7.0",
-  "description": "Reverse engineer anything from your terminal or agent with one CLI and MCP server.",
+  "private": true,
+  "description": "InsideApp — PezzaliAPP: analisi locale e lecita di applicazioni e software propri o autorizzati, derivata da REA (MIT).",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/morluto/rea.git"
+    "url": "git+https://github.com/pezzaliapp/InsideApp.git"
   },
-  "homepage": "https://github.com/morluto/rea#readme",
+  "homepage": "https://github.com/pezzaliapp/InsideApp#readme",
   "bugs": {
-    "url": "https://github.com/morluto/rea/issues"
+    "url": "https://github.com/pezzaliapp/InsideApp/issues"
   },
   "keywords": [
+    "insideapp",
+    "pezzaliapp",
     "reverse-engineering",
-    "binary-analysis",
-    "agents",
-    "agent-skills",
-    "cli",
-    "mcp-server",
-    "model-context-protocol",
     "static-analysis",
-    "rea",
-    "decompiler",
-    "mcp",
-    "hopper",
-    "electron",
-    "javascript-analysis",
-    "ghidra",
-    "ida"
+    "mcp-server",
+    "claude-code"
   ],
-  "publishConfig": {
-    "access": "public"
-  },
   "type": "module",
   "imports": {
     "#javascript-analysis-worker": "./dist/composition/javascriptAnalysisWorkerProcess.js",
     "#web-bundle-analysis-worker": "./dist/composition/webBundleAnalysisWorkerProcess.js"
   },
   "bin": {
+    "insideapp": "scripts/rea.mjs",
     "rea": "scripts/rea.mjs",
     "rea-agents": "scripts/rea.mjs"
   },
@@ -102,11 +90,9 @@
     "licenses"
   ],
   "scripts": {
-    "release:notes": "node scripts/release-notes.mjs",
     "deps:check": "node scripts/check-dependency-install.mjs",
     "metadata:generate": "node scripts/run-exclusive.mjs artifacts node scripts/generate-package-metadata.mjs",
     "metadata:check": "node scripts/generate-package-metadata.mjs --check",
-    "mcp-registry:check": "node scripts/verify-mcp-registry-metadata.mjs",
     "mcp-catalog:generate": "node scripts/check-dependency-install.mjs && node scripts/run-exclusive.mjs artifacts node scripts/run-turbo.mjs run artifacts:mcp-catalog",
     "mcp-catalog:check": "node scripts/check-dependency-install.mjs && node scripts/run-exclusive.mjs artifacts node scripts/run-turbo.mjs run mcp-catalog:check:built",
     "prebuild": "npm run deps:check",
@@ -130,18 +116,17 @@
     "check:ci:deep": "node scripts/run-exclusive.mjs artifacts npm run check:ci:deep:tasks && npm run verify:architecture-guards && npm run verify:test-discovery && npm run test:python",
     "check:ci:deep:tasks": "node scripts/run-turbo.mjs run knip metadata:check jscpd scan:todos",
     "check:ci:tasks": "node scripts/run-turbo.mjs run typecheck lint:built format:check knip metadata:check jscpd scan:todos",
-    "ci:static-context": "node scripts/ci/static-task-context.mjs",
     "build:cached": "node scripts/check-dependency-install.mjs && node scripts/run-exclusive.mjs artifacts node scripts/run-turbo.mjs run artifacts:skills",
     "build:termux": "node scripts/run-exclusive.mjs artifacts npm run build:termux:run",
     "build:termux:run": "npm run compile:termux && npm run artifacts:skills",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
-    "lint": "node scripts/ci/static-check-report.mjs lint && npm run verify:module-boundaries",
+    "lint": "node scripts/static-check-report.mjs lint && npm run verify:module-boundaries",
     "lint:details": "oxlint && npm run verify:module-boundaries",
     "lint:built": "npm run lint",
     "lint:fix": "oxlint --fix && npm run verify:module-boundaries",
     "knip": "knip --cache",
-    "jscpd": "node scripts/ci/static-check-report.mjs duplicates",
+    "jscpd": "node scripts/static-check-report.mjs duplicates",
     "jscpd:details": "jscpd src/ tests/ --no-tips",
     "scan:todos": "node scripts/scan-todos.mjs",
     "start": "node scripts/rea.mjs mcp",
@@ -150,8 +135,8 @@
     "test:run": "vitest run",
     "test:python": "python3 -m unittest bridge/native/test_rea_lldb_tracer.py bridge/pwndbg/test_core_context.py bridge/mitmproxy/test_capture.py -v && python3 -m unittest discover -s experiments/analysis-efficiency -p 'test_*.py' -v",
     "test:local": "node scripts/run-development-tests.mjs local",
-    "test:fast": "node scripts/ci/test-group.mjs source",
-    "test:built": "node scripts/ci/test-group.mjs built",
+    "test:fast": "node scripts/test-group.mjs source",
+    "test:built": "node scripts/test-group.mjs built",
     "pretest:boundary": "npm run test:prepare",
     "test:boundary": "vitest run --project boundary --project cli-boundary --project process-boundary --project mcp-boundary --project process-global",
     "pretest:mcp": "node scripts/check-dependency-install.mjs && node scripts/run-exclusive.mjs artifacts node scripts/run-turbo.mjs run artifacts:skills artifacts:mcp-catalog",
@@ -262,7 +247,6 @@
     "verify:hermes-client": "npm run build:cached && node scripts/verify-native-agent-client.mjs hermes",
     "verify:deepseek-client": "npm run build:cached && node scripts/verify-deepseek-client.mjs",
     "probe:windows-capabilities": "npm run build:cached && node scripts/windows-capabilities.mjs",
-    "verify:published": "node scripts/verify-published-package.mjs",
     "config:print": "node scripts/print-mcp-config.mjs",
     "evidence:generate": "node scripts/check-dependency-install.mjs && node scripts/run-exclusive.mjs artifacts node scripts/run-turbo.mjs run artifacts:managed-evidence",
     "evidence:check": "node scripts/check-dependency-install.mjs && node scripts/run-exclusive.mjs artifacts node scripts/run-turbo.mjs run evidence:check:built",
@@ -285,7 +269,6 @@
     "test:sqlite:run": "vitest run src/application/sqlite/ tests/boundary/sqlite/ tests/acceptance/sqliteDatabaseCli.test.ts tests/boundary/mcp/serverLifecycleMcp.test.ts",
     "build:windows-native": "node scripts/build-windows-native.mjs",
     "verify:windows-native:artifact": "node scripts/verify-windows-native-artifact.mjs",
-    "prepublishOnly": "npm run verify:windows-native:artifact",
     "verify:cutter": "npm run build:cached && node scripts/verify-real-cutter.mjs",
     "verify:windows-native": "node scripts/verify-windows-native.mjs",
     "verify:ghidra:windows:package": "node scripts/verify-packaged-ghidra-windows.mjs",
@@ -404,7 +387,6 @@
     "lint-staged": "16.4.0",
     "oxfmt": "0.72.0",
     "oxlint": "1.87.0",
-    "release-please": "17.3.0",
     "rolldown": "1.2.12",
     "tsrs": "0.18.0-ts7.1.0-dev.20260929",
     "tsx": "4.23.15",
@@ -420,5 +402,9 @@
   },
   "allowScripts": {
     "frida@17.23.2": true
-  }
+  },
+  "author": "Alessandro Pezzali (PezzaliAPP)",
+  "contributors": [
+    "morluto (autore di REA, https://github.com/morluto/rea)"
+  ]
 }
