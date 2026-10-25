@@ -69,3 +69,7 @@ conservati integralmente in:
 - Strumento MCP `create_report`, sullo stesso servizio dei rapporti, e sezione
   facoltativa Claude Code nell'interfaccia, senza chiavi API né configurazioni
   globali.
+- Adattatori Windows sperimentali, non ancora verificati su Windows reale:
+  launcher `scripts\insideapp.cmd`, finestra di scelta e apertura del browser
+  native, regole dei percorsi Windows (vedi
+  `proposte/compatibilita-windows.md`).

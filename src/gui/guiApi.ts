@@ -73,6 +73,8 @@ const failureMessage = ({ code, category }: GuiAnalysisFailure): string => {
     return "L'elemento non è leggibile nel formato previsto: potrebbe essere danneggiato o di un altro tipo.";
   if (code === "access_denied")
     return "InsideApp non ha il permesso di leggere l'elemento scelto.";
+  if (code === "capability_unavailable")
+    return "Questa analisi non è disponibile su questo computer: su Windows richiede i controlli nativi di InsideApp (vedi il README). Eseguibili, archivi e altri file restano analizzabili.";
   if (category === "unavailable")
     return "L'elemento scelto non è stato trovato o non è leggibile.";
   if (code === "resource_constraint")
@@ -146,7 +148,12 @@ const pickTarget: Handler = async ({ context, request, reply }) => {
   try {
     const picked = await context.picker(kind, context.pickerSignal);
     context.touch();
-    if (!picked.ok) return json(reply, 200, { outcome: picked.reason });
+    if (!picked.ok)
+      return json(reply, 200, {
+        // No dialog on this system, unlike a chosen item that is unusable.
+        outcome:
+          picked.reason === "unavailable" ? "picker_unavailable" : "cancelled",
+      });
     const target = await context.targets.add(
       picked.path,
       context.homeDirectory,

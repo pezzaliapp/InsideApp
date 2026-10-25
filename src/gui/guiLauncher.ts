@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, win32 } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
@@ -48,17 +48,52 @@ export const writeGuiLauncher = async (
   };
 };
 
+/**
+ * Explorer opens a file with its registered program, here the default
+ * browser; by absolute path so no `explorer.exe` elsewhere is chosen.
+ */
+const windowsExplorer = (
+  environment: Readonly<Record<string, string | undefined>>,
+): string =>
+  win32.join(
+    environment.SystemRoot ?? environment.SYSTEMROOT ?? "C:\\Windows",
+    "explorer.exe",
+  );
+
+/** Starts the desktop opener; replaceable only so tests can observe it. */
+export type OpenerRun = (
+  command: string,
+  args: string[],
+  options: { readonly timeout: number },
+) => Promise<unknown>;
+
 /** Ask the desktop to open the launch file in the default browser. */
-export const openGuiLauncher = async (path: string): Promise<boolean> => {
+export const openGuiLauncher = async (
+  path: string,
+  platform: NodeJS.Platform = process.platform,
+  run: OpenerRun = execute,
+): Promise<boolean> => {
+  if (platform === "win32")
+    try {
+      await run(windowsExplorer(process.env), [path], { timeout: 10_000 });
+      return true;
+    } catch (cause: unknown) {
+      // Explorer reports exit code 1 even after opening the file; only a
+      // failure to start it, or no answer at all, means nothing opened.
+      return (
+        typeof (cause as { code?: unknown }).code === "number" &&
+        (cause as { killed?: unknown }).killed !== true
+      );
+    }
   const opener =
-    process.platform === "darwin"
+    platform === "darwin"
       ? "open"
-      : process.platform === "linux"
+      : platform === "linux"
         ? "xdg-open"
         : undefined;
   if (opener === undefined) return false;
   try {
-    await execute(opener, [path], { timeout: 10_000 });
+    await run(opener, [path], { timeout: 10_000 });
     return true;
   } catch {
     return false;

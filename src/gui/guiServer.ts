@@ -26,7 +26,7 @@ import {
   guiSessionCookie,
 } from "./guiSecurity.js";
 import { GUI_LAUNCH_TOKEN_LIFETIME_MS, GuiSession } from "./guiSession.js";
-import { GuiTargets, osascriptPicker, type GuiPicker } from "./guiTargets.js";
+import { GuiTargets, systemPicker, type GuiPicker } from "./guiTargets.js";
 
 export { GUI_MAX_BODY_BYTES } from "./guiHttp.js";
 export type { GuiStopReason } from "./guiApi.js";
@@ -207,7 +207,7 @@ export const startGuiServer = async (
     session,
     targets: new GuiTargets(),
     analyses,
-    picker: options.picker ?? osascriptPicker,
+    picker: options.picker ?? systemPicker,
     pickerSignal: picker.signal,
     now,
     touch,

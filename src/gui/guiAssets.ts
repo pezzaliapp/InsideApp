@@ -1,6 +1,14 @@
 // Static GUI assets, served from memory. Scripts and styles are separate
 // same-origin resources so the page policy never needs 'unsafe-inline'.
 
+/** The command that starts the interface on this system, as the user types it. */
+const LAUNCH_COMMAND =
+  process.platform === "win32"
+    ? "scripts\\insideapp.cmd gui"
+    : "./scripts/insideapp.sh gui";
+/** The same command inside a JavaScript string of the served scripts. */
+const LAUNCH_COMMAND_JS = JSON.stringify(LAUNCH_COMMAND).slice(1, -1);
+
 const page = (
   title: string,
   body: string,
@@ -36,7 +44,7 @@ export const GUI_LOCKED_HTML = page(
   "InsideApp — sessione non attiva",
   `<main>${BRAND}
 <section class="card"><h2>Sessione non attiva</h2>
-<p>Questa pagina si apre solo dalla sessione avviata dal comando <code>./scripts/insideapp.sh gui</code>.</p>
+<p>Questa pagina si apre solo dalla sessione avviata dal comando <code>${LAUNCH_COMMAND}</code>.</p>
 <p>Chiudi questa scheda e riavvia il comando dal terminale.</p></section>
 ${FOOTER}</main>`,
 );
@@ -54,7 +62,7 @@ ${FOOTER}</main>`,
 export const GUI_APP_HTML = page(
   "InsideApp — PezzaliAPP",
   `<main>${BRAND}
-<p class="local no-print" role="note"><strong>Analisi locale.</strong> Il motore gira su questo Mac: nessun file o rapporto viene inviato in rete e le applicazioni analizzate non vengono mai eseguite.</p>
+<p class="local no-print" role="note"><strong>Analisi locale.</strong> Il motore gira su questo computer: nessun file o rapporto viene inviato in rete e le applicazioni analizzate non vengono mai eseguite.</p>
 
 <ol class="steps no-print" aria-label="Passaggi">
 <li id="step-select" aria-current="step">Seleziona</li><li id="step-analyze">Analizza</li><li id="step-understand">Comprendi</li><li id="step-export">Esporta</li>
@@ -112,7 +120,7 @@ export const GUI_APP_HTML = page(
 <p>Non serve per usare InsideApp. Se vuoi, Claude Code usa lo stesso motore tramite il server MCP del progetto, entro il tuo abbonamento: nessuna API a consumo.</p>
 <p id="claude-state" class="state">Lettura della configurazione…</p>
 <ol class="setup">
-<li>Apri il Terminale nella cartella di InsideApp.</li>
+<li>Apri il terminale nella cartella di InsideApp.</li>
 <li>Avvia Claude Code con <code>claude</code> e approva il server <code>insideapp</code> di <code>.mcp.json</code> quando te lo chiede.</li>
 <li>Controlla con <code>/mcp</code> che il server sia collegato; poi chiedi, ad esempio, un rapporto con lo strumento <code>create_report</code>.</li>
 </ol>
@@ -191,7 +199,7 @@ export const GUI_START_JS = `"use strict";
   const title = document.getElementById("start-title");
   const message = document.getElementById("start-message");
   const fail = (text) => { title.textContent = "Sessione non avviata"; message.textContent = text; };
-  if (token === "") { fail("Manca il codice di avvio. Riavvia ./scripts/insideapp.sh gui dal terminale."); return; }
+  if (token === "") { fail("Manca il codice di avvio. Riavvia ${LAUNCH_COMMAND_JS} dal terminale."); return; }
   fetch("/api/session", {
     method: "POST",
     credentials: "same-origin",
@@ -199,8 +207,8 @@ export const GUI_START_JS = `"use strict";
     body: JSON.stringify({ token }),
   }).then((response) => {
     if (response.ok) location.replace("/");
-    else fail("Il codice di avvio non è più valido (vale una sola volta e per 60 secondi). Riavvia ./scripts/insideapp.sh gui dal terminale.");
-  }, () => fail("Il motore locale non risponde. Riavvia ./scripts/insideapp.sh gui dal terminale."));
+    else fail("Il codice di avvio non è più valido (vale una sola volta e per 60 secondi). Riavvia ${LAUNCH_COMMAND_JS} dal terminale.");
+  }, () => fail("Il motore locale non risponde. Riavvia ${LAUNCH_COMMAND_JS} dal terminale."));
 })();
 `;
 
@@ -246,7 +254,7 @@ export const GUI_APP_JS = `"use strict";
   };
   const sessionLost = (response) => {
     if (response.status !== 401) return false;
-    ended("Sessione scaduta. Riavvia ./scripts/insideapp.sh gui per continuare.");
+    ended("Sessione scaduta. Riavvia ${LAUNCH_COMMAND_JS} per continuare.");
     return true;
   };
 
@@ -273,7 +281,8 @@ export const GUI_APP_JS = `"use strict";
         steps("analyze");
       } else {
         byId("target").textContent = result.outcome === "cancelled" ? "Nessun elemento scelto." :
-          result.outcome === "too_broad" ? "Questa cartella è troppo ampia: scegli un'applicazione o una cartella più specifica, non la radice del disco o la cartella Inizio." :
+          result.outcome === "picker_unavailable" ? "La finestra di scelta del sistema non è disponibile su questo computer. Puoi creare il rapporto dal terminale con il comando report." :
+          result.outcome === "too_broad" ? "Questa cartella è troppo ampia: scegli un'applicazione o una cartella più specifica, non la radice del disco o la tua cartella personale." :
           response.status === 409 ? "La finestra di scelta è già aperta." : "L'elemento scelto non è utilizzabile.";
       }
     } catch { byId("target").textContent = "Il motore locale non risponde."; }
@@ -302,7 +311,7 @@ export const GUI_APP_JS = `"use strict";
       const response = await api("/api/analyses/" + state.analysis);
       if (sessionLost(response)) return;
       if (!showAnalysis(await response.json())) state.poll = setTimeout(poll, POLL_MS);
-    } catch { ended("InsideApp è stato chiuso. Riavvia ./scripts/insideapp.sh gui per continuare."); }
+    } catch { ended("InsideApp è stato chiuso. Riavvia ${LAUNCH_COMMAND_JS} per continuare."); }
   };
   const start = async () => {
     byId("analysis-error").textContent = "";
@@ -420,7 +429,7 @@ export const GUI_APP_JS = `"use strict";
   const refresh = async () => {
     let response;
     try { response = await api("/api/status"); }
-    catch { ended("InsideApp è stato chiuso. Riavvia ./scripts/insideapp.sh gui per continuare."); return; }
+    catch { ended("InsideApp è stato chiuso. Riavvia ${LAUNCH_COMMAND_JS} per continuare."); return; }
     if (sessionLost(response)) return;
     if (!response.ok) { setState(byId("engine-state"), "Stato non disponibile (" + response.status + ").", "error"); return; }
     const status = await response.json();
@@ -431,12 +440,18 @@ export const GUI_APP_JS = `"use strict";
     fact(facts, "Node.js", engine.node + " (" + engine.platform + ")");
     fact(facts, "Applicazioni analizzate", "mai eseguite: solo analisi statica");
     fact(facts, "Analisi disponibili", engine.analysis.report_routes.map((route) => ROUTES[route] || route).join("; "));
+    const controls = engine.analysis.windows_native_controls;
+    if (controls !== "not_required")
+      fact(facts, "Controlli nativi Windows", controls === "available" ? "attivi" :
+        (controls === "missing" ? "non installati" : "non utilizzabili su questo computer") +
+        ": app JavaScript/Electron e database SQLite non si possono analizzare; eseguibili, archivi e altri file sì. Vedi il README.");
     fact(facts, "Strumenti MCP", String(engine.claude.mcp_tools));
     fact(facts, "Chiusura per inattività", "dopo " + Math.round(status.session.idle_timeout_seconds / 60) + " minuti");
     const mcp = engine.claude.project_mcp_server;
     setState(byId("claude-state"),
       mcp === "configured" ? "Server MCP di progetto configurato (.mcp.json)." :
-      mcp === "missing" ? "File .mcp.json non trovato nel progetto." : "File .mcp.json non riconosciuto.",
+      mcp === "missing" ? "File .mcp.json non trovato nel progetto." :
+      mcp === "unsupported_host" ? "Su Windows la modalità Claude Code non è ancora disponibile: il server di .mcp.json usa uno script per macOS e Linux." : "File .mcp.json non riconosciuto.",
       mcp === "configured" ? "ok" : "warn");
   };
 

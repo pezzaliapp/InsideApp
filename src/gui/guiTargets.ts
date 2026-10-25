@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { lstat } from "node:fs/promises";
-import { basename, isAbsolute } from "node:path";
+import { basename, isAbsolute, win32 } from "node:path";
 
 import { isTooBroadReportFolder } from "../application/report/reportTarget.js";
 import {
@@ -74,7 +74,102 @@ export const createOsascriptPicker =
       );
     });
 
-export const osascriptPicker = createOsascriptPicker();
+/**
+ * Fixed Windows PowerShell script for each choice; no caller text is
+ * interpolated. It loads the standard Windows Forms dialogs, needs no
+ * administrator rights and changes no execution policy: where policy forbids
+ * these dialogs it fails, and the choice is reported unavailable. Exit code 2
+ * means the user closed the dialog. A chosen shortcut (.lnk) resolves to its
+ * target, as in Explorer.
+ */
+const POWERSHELL_DIALOGS: Readonly<Record<GuiPickKind, string>> = {
+  file: "$d = New-Object System.Windows.Forms.OpenFileDialog -Property @{ Title = 'Scegli il file da analizzare con InsideApp'; CheckFileExists = $true; Multiselect = $false }; if ($d.ShowDialog($o) -ne 'OK') { exit 2 }; [Console]::Out.Write($d.FileName)",
+  folder:
+    "$d = New-Object System.Windows.Forms.FolderBrowserDialog -Property @{ Description = 'Scegli la cartella da analizzare con InsideApp'; ShowNewFolderButton = $false }; if ($d.ShowDialog($o) -ne 'OK') { exit 2 }; [Console]::Out.Write($d.SelectedPath)",
+};
+
+/** The fixed arguments passed to Windows PowerShell for one choice. */
+export const powershellArguments = (kind: GuiPickKind): readonly string[] => [
+  "-NoLogo",
+  "-NoProfile",
+  "-NonInteractive",
+  "-STA",
+  "-Command",
+  [
+    "$ErrorActionPreference = 'Stop'",
+    "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false",
+    "Add-Type -AssemblyName System.Windows.Forms",
+    // An unshown topmost owner keeps the dialog above the browser.
+    "$o = New-Object System.Windows.Forms.Form -Property @{ TopMost = $true; ShowInTaskbar = $false }",
+    POWERSHELL_DIALOGS[kind],
+  ].join("; "),
+];
+
+/**
+ * The Windows PowerShell shipped with Windows, by absolute path so a
+ * `powershell.exe` in the working folder or on PATH is never chosen.
+ */
+export const windowsPowershellPath = (
+  environment: Readonly<Record<string, string | undefined>>,
+): string =>
+  win32.join(
+    environment.SystemRoot ?? environment.SYSTEMROOT ?? "C:\\Windows",
+    "System32",
+    "WindowsPowerShell",
+    "v1.0",
+    "powershell.exe",
+  );
+
+/** A chosen Windows path without a trailing separator, except at a root. */
+const windowsChoice = (output: string): GuiPickOutcome => {
+  const path = output.replace(/\r?\n$/u, "");
+  // Drive or UNC paths only; `\\folder` would depend on the current drive.
+  if (!win32.isAbsolute(path) || /^[\\/][^\\/]/u.test(path))
+    return { ok: false, reason: "unavailable" };
+  const root = win32.parse(path).root;
+  return {
+    ok: true,
+    path: path.length > root.length ? path.replace(/[\\/]+$/u, "") : path,
+  };
+};
+
+/**
+ * Native Windows dialog through Windows PowerShell. `command` is replaceable
+ * only so tests can stand in for the dialog.
+ */
+export const createWindowsPicker =
+  (
+    command = windowsPowershellPath(process.env),
+    platform = process.platform,
+  ): GuiPicker =>
+  (kind, signal) =>
+    new Promise((resolve) => {
+      if (platform !== "win32")
+        return resolve({ ok: false, reason: "unavailable" });
+      execFile(
+        command,
+        powershellArguments(kind),
+        { signal, timeout: PICKER_TIMEOUT_MS, maxBuffer: 64 * 1024 },
+        (error, stdout) => {
+          if (error === null) return resolve(windowsChoice(stdout));
+          // Closing the dialog, an abort or the timeout ends the choice; a
+          // missing PowerShell or a policy refusal leaves no dialog at all.
+          resolve({
+            ok: false,
+            reason:
+              error.code === 2 || signal.aborted || error.killed
+                ? "cancelled"
+                : "unavailable",
+          });
+        },
+      );
+    });
+
+/** The native dialog of this desktop; other systems have none yet. */
+export const systemPicker: GuiPicker =
+  process.platform === "win32"
+    ? createWindowsPicker()
+    : createOsascriptPicker();
 
 /** What the browser may know about a chosen item: never its path. */
 export interface GuiTargetView {

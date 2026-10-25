@@ -15,10 +15,25 @@ export interface GuiEngineStatus {
     readonly executes_targets: false;
     readonly report_routes: readonly string[];
     readonly gui_analysis_available: false;
+    /**
+     * Windows only: the verified native controls that protect private copies
+     * of JavaScript applications and SQLite databases. Without them those
+     * analyses stop; executables, archives and other files still work.
+     */
+    readonly windows_native_controls:
+      | "not_required"
+      | "available"
+      | "missing"
+      | "refused";
   };
   readonly claude: {
     readonly mcp_tools: number;
-    readonly project_mcp_server: "configured" | "missing" | "invalid";
+    /** `unsupported_host`: the project launcher in .mcp.json is a POSIX script. */
+    readonly project_mcp_server:
+      | "configured"
+      | "missing"
+      | "invalid"
+      | "unsupported_host";
   };
 }
 
@@ -49,6 +64,18 @@ const projectMcpServer = async (
   }
 };
 
+/** Readiness of the Windows native controls, without exposing their diagnostics. */
+const windowsNativeControls = async (): Promise<
+  GuiEngineStatus["analysis"]["windows_native_controls"]
+> => {
+  if (process.platform !== "win32") return "not_required";
+  const { systemWindowsNativeAuthority } =
+    await import("../windows/WindowsNativeLoader.js");
+  const loaded = systemWindowsNativeAuthority();
+  if (loaded.available) return "available";
+  return loaded.failureStage === "artifact" ? "missing" : "refused";
+};
+
 export const guiEngineStatus = async (
   projectRoot: string,
 ): Promise<GuiEngineStatus> => {
@@ -63,10 +90,14 @@ export const guiEngineStatus = async (
       executes_targets: false,
       report_routes: REPORT_ROUTES,
       gui_analysis_available: false,
+      windows_native_controls: await windowsNativeControls(),
     },
     claude: {
       mcp_tools: TOOL_CONTRACTS.length,
-      project_mcp_server: await projectMcpServer(projectRoot),
+      project_mcp_server:
+        process.platform === "win32"
+          ? "unsupported_host"
+          : await projectMcpServer(projectRoot),
     },
   };
 };

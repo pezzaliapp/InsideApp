@@ -35,6 +35,7 @@ Dettagli in [NOTICE.md](NOTICE.md).
 | Componente  | Versione                            | Note                                                                                                     |
 | ----------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | macOS       | Apple Silicon (arm64)               | Verificato su macOS 26. Linux x64/arm64 è supportato dal codice originale ma non verificato in InsideApp |
+| Windows     | 10/11 a 64 bit (x64)                | **Sperimentale, non verificato su Windows reale**: vedi [Windows (sperimentale)](#windows-sperimentale)  |
 | Node.js     | 24.22.1 (da [.nvmrc](.nvmrc))       | Installato in una toolchain isolata, vedi sotto                                                          |
 | Claude Code | qualsiasi versione con supporto MCP | Facoltativo: InsideApp funziona anche da terminale                                                       |
 
@@ -78,6 +79,68 @@ hook Git di sviluppo.
 ./scripts/insideapp.sh --version
 ./scripts/insideapp.sh doctor
 ```
+
+### Windows (sperimentale)
+
+Il supporto Windows è in preparazione e **non è ancora verificato su un
+computer Windows reale**: le prove finora sono test eseguiti su macOS e
+prove con il Node ufficiale per Windows sotto Wine, che non equivale a
+Windows. Il sito non dichiara Windows supportato. Dettagli, risultati e
+lavoro mancante: [proposte/compatibilita-windows.md](proposte/compatibilita-windows.md).
+
+Non esiste un programma d'installazione. I passaggi previsti, senza
+privilegi di amministratore e senza modificare le policy di sistema, sono:
+
+1. Installa [Git per Windows](https://git-scm.com/download/win) e clona il
+   repository in una cartella del tuo profilo, ad esempio
+   `%USERPROFILE%\InsideApp`: i permessi ereditati dal profilo proteggono il
+   file di avvio dell'interfaccia dagli altri utenti del computer.
+2. In PowerShell, scarica Node.js nella toolchain isolata e verificane
+   l'impronta:
+
+   ```powershell
+   $V = "v24.22.1"
+   $D = "$HOME\.insideapp\download"; New-Item -ItemType Directory -Force $D, "$HOME\.insideapp\toolchain" | Out-Null
+   Invoke-WebRequest "https://nodejs.org/dist/$V/SHASUMS256.txt" -OutFile "$D\SHASUMS256.txt"
+   Invoke-WebRequest "https://nodejs.org/dist/$V/node-$V-win-x64.zip" -OutFile "$D\node-$V-win-x64.zip"
+   $atteso = (Select-String " node-$V-win-x64.zip$" "$D\SHASUMS256.txt").Line.Split(" ")[0]
+   if ((Get-FileHash "$D\node-$V-win-x64.zip" -Algorithm SHA256).Hash -ne $atteso) { throw "Impronta non valida" }
+   Expand-Archive "$D\node-$V-win-x64.zip" "$HOME\.insideapp\toolchain"
+   ```
+
+3. Dipendenze, build e avvio, dalla cartella del progetto:
+
+   ```powershell
+   $env:Path = "$HOME\.insideapp\toolchain\node-v24.22.1-win-x64;" + $env:Path
+   npm.cmd ci --ignore-scripts --no-audit --no-fund --no-update-notifier
+   npm.cmd run build:cached
+   scripts\insideapp.cmd --version
+   scripts\insideapp.cmd gui
+   ```
+
+`$env:Path` cambia solo per quella finestra di PowerShell. Si usa `npm.cmd`
+invece di `npm` perché la execution policy predefinita di Windows blocca lo
+script `npm.ps1`: InsideApp non chiede di cambiarla.
+
+Cosa è previsto su Windows:
+
+- **Interfaccia:** `scripts\insideapp.cmd gui` apre il browser predefinito
+  tramite Esplora risorse. La finestra di scelta usa le finestre standard di
+  Windows, tramite Windows PowerShell con uno script fisso: nessuna modifica
+  della execution policy, nessun privilegio di amministratore. Se una policy
+  aziendale le blocca, l'interfaccia lo dice e resta disponibile il comando
+  `report`. Un collegamento `.lnk` scelto porta al suo bersaglio; i
+  collegamenti simbolici e le giunzioni vengono rifiutati.
+- **Eseguibili, archivi e altri file:** rapporti completi, come su macOS.
+- **App JavaScript/Electron e database SQLite:** su Windows il motore REA
+  protegge la copia privata dei file con controlli nativi
+  (`native/windows/`) che InsideApp non include ancora. Senza di essi queste
+  analisi si fermano con un messaggio esplicito, senza bloccare le altre.
+- **App macOS (`.app`):** la struttura viene letta; le analisi che
+  richiedono strumenti di macOS (Info.plist, eseguibile, firma) sono indicate
+  nel rapporto come non disponibili su questo sistema.
+- **Claude Code:** non ancora disponibile su Windows, perché `.mcp.json`
+  avvia uno script per macOS e Linux.
 
 ## Uso con Claude Code
 
@@ -183,11 +246,11 @@ HTML e Markdown nella cartella `rapporti-insideapp/` (esclusa da Git):
 
 - **Come si usa:** il flusso è **Seleziona → Analizza → Comprendi → Esporta**.
   1. Dichiari che il software è tuo o che sei autorizzato ad analizzarlo.
-  2. Scegli un file, un'app `.app` o una cartella con la finestra nativa di macOS.
+  2. Scegli un file, un'app `.app` o una cartella con la finestra nativa del sistema (su Windows, sperimentale).
   3. Avvii l'analisi: vedi la fase e il tempo trascorso, e puoi annullare.
   4. Leggi il rapporto con le classi Osservato, Derivato, Ipotesi e Sconosciuto e le prove; puoi filtrarlo per classe.
   5. Lo scarichi in HTML o Markdown, oppure lo stampi o salvi in PDF dal browser.
-- **Cosa analizza oggi:** le stesse vie del comando `report` (vedi sopra). Non sono analizzabili la radice del disco, le cartelle di primo livello e la cartella Inizio: scegli un'applicazione o una cartella più specifica.
+- **Cosa analizza oggi:** le stesse vie del comando `report` (vedi sopra). Non sono analizzabili la radice del disco o di una condivisione di rete, le cartelle di primo livello (come `/Applications` o `C:\Program Files`) e la cartella Inizio o del profilo utente: scegli un'applicazione o una cartella più specifica.
 - **Privacy:** InsideApp legge solo l'elemento che scegli. Il percorso resta nel processo locale: non arriva al browser e non compare nei rapporti esportati. Le applicazioni analizzate non vengono mai eseguite.
 - **Dove ascolta:** solo su `127.0.0.1`, su una porta scelta dal sistema. Non è raggiungibile da altri dispositivi della rete e non richiede di aprire il firewall.
 - **Come si accede:** a ogni avvio InsideApp scrive un file di avvio in `.cache/gui/`, leggibile solo dal tuo utente. Il file contiene un codice monouso valido 60 secondi, che non compare mai nel terminale né negli argomenti dei processi. Il browser lo scambia con un cookie di sessione `HttpOnly` e `SameSite=Strict`.

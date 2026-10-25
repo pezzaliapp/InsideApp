@@ -1,3 +1,5 @@
+import { sep } from "node:path";
+
 import { z } from "zod";
 
 import { parseEvidence, type Evidence } from "../../domain/evidence.js";
@@ -48,10 +50,11 @@ export interface ReportOptions {
   readonly homeDirectory: string | undefined;
 }
 
+/** Paths come from this host, so its separator delimits the home folder. */
 const displayPath = (path: string, home: string | undefined): string =>
   home !== undefined &&
   home.length > 1 &&
-  (path === home || path.startsWith(`${home}/`))
+  (path === home || path.startsWith(`${home}${sep}`))
     ? `~${path.slice(home.length)}`
     : path;
 
@@ -65,6 +68,12 @@ const contextOf = (
   confidence: evidence.confidence,
   resolvedOperations,
 });
+
+/** Failure codes of an analysis this host cannot run, such as macOS tools on Windows. */
+const UNAVAILABLE_HERE: ReadonlySet<string> = new Set([
+  "capability_unavailable",
+  "provider_unavailable",
+]);
 
 const failed = (
   operation: string,
@@ -153,7 +162,9 @@ export const createInsideAppReport = (
     if (supplement.status === "failed")
       collector.add("limits", {
         kind: "unknown",
-        statement: `L'analisi aggiuntiva ${supplement.operation} non è riuscita (codice ${supplement.failure_code}): le informazioni che avrebbe fornito restano sconosciute.`,
+        statement: UNAVAILABLE_HERE.has(supplement.failure_code)
+          ? `L'analisi aggiuntiva ${supplement.operation} non è disponibile su questo sistema (ad esempio richiede strumenti di macOS): le informazioni che avrebbe fornito restano sconosciute.`
+          : `L'analisi aggiuntiva ${supplement.operation} non è riuscita (codice ${supplement.failure_code}): le informazioni che avrebbe fornito restano sconosciute.`,
         evidence: null,
       });
   const sections = collector.sections();

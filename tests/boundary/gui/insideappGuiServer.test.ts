@@ -180,6 +180,8 @@ describe("InsideApp GUI request admission", () => {
           local_only: true,
           executes_targets: false,
           gui_analysis_available: false,
+          windows_native_controls:
+            process.platform === "win32" ? expect.any(String) : "not_required",
         },
         claude: {
           project_mcp_server: "missing",
