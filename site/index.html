@@ -43,10 +43,10 @@
           <h1>InsideApp <span>— Guarda dentro il software</span></h1>
           <p class="lead">
             Un'applicazione locale e gratuita per capire come sono fatte le
-            applicazioni che possiedi o che sei autorizzato ad analizzare.
-            InsideApp legge i file, non esegue mai il software analizzato, e
-            produce un rapporto in italiano in cui ogni affermazione ha una
-            prova verificabile.
+            applicazioni che possiedi o che sei autorizzato ad analizzare. Per
+            creare il rapporto InsideApp legge i file senza eseguire il software
+            analizzato e scrive in italiano, con una prova verificabile per ogni
+            affermazione.
           </p>
           <div class="cta">
             <a class="button primary" href="#installazione">Come installarlo</a>
@@ -264,17 +264,23 @@
           <h2>Sicurezza e privacy</h2>
           <ul class="checks">
             <li>
-              <strong>Mai eseguito.</strong> Il software analizzato viene letto,
-              non avviato né emulato.
+              <strong>Rapporti senza esecuzione.</strong> Per i rapporti e
+              nell'interfaccia il software analizzato viene letto, mai avviato
+              né emulato. Alcuni strumenti avanzati del motore, da terminale o
+              con Claude Code (debugger, Frida, cattura di scenari), avviano un
+              programma solo se lo chiedi esplicitamente.
             </li>
             <li>
               <strong>Tutto in locale.</strong> Nessun file o rapporto viene
-              inviato in rete; nessuna telemetria.
+              inviato in rete e non c'è telemetria. Le poche funzioni che usano
+              la rete, come l'analisi di un sito web, partono solo su tua
+              richiesta.
             </li>
             <li>
               <strong>Solo ciò che scegli.</strong> Si analizza un elemento alla
               volta, dopo la tua dichiarazione di autorizzazione. La radice del
-              disco e la cartella Inizio sono escluse.
+              disco, le cartelle di primo livello e la cartella Inizio sono
+              escluse.
             </li>
             <li>
               <strong>Interfaccia protetta.</strong> Il server ascolta solo su
@@ -288,7 +294,9 @@
             </li>
             <li>
               <strong>Questo sito</strong> è una pagina statica: non riceve
-              file, non usa cookie, analytics né risorse di terze parti.
+              file, non usa cookie, analytics né risorse di terze parti. È
+              ospitato su Cloudflare Pages, che tratta i dati tecnici di
+              connessione necessari a servirlo.
             </li>
           </ul>
           <h3>Avvertenza sull'utilizzo</h3>
@@ -390,10 +398,15 @@ npm run build:cached</code></pre>
           <details>
             <summary>InsideApp avvia le applicazioni che analizza?</summary>
             <p>
-              No. Legge i file e la loro struttura. Per alcune informazioni usa
-              strumenti di sola lettura del sistema, come
-              <code>codesign</code> e <code>plutil</code>, ma l'applicazione
-              analizzata non viene mai eseguita.
+              Non per i rapporti e nell'interfaccia: InsideApp legge i file e la
+              loro struttura. Per alcune informazioni usa strumenti di sola
+              lettura del sistema, come <code>codesign</code> e
+              <code>plutil</code>, ma l'applicazione analizzata non viene
+              eseguita. Da terminale o con Claude Code esistono anche strumenti
+              avanzati (debugger, Frida, cattura di scenari), quasi sempre
+              basati su programmi da installare a parte, che avviano un
+              programma solo su tua richiesta esplicita: usali solo su software
+              autorizzato e in un ambiente isolato.
             </p>
           </details>
           <details>
@@ -408,8 +421,9 @@ npm run build:cached</code></pre>
             <summary>I miei file vengono inviati da qualche parte?</summary>
             <p>
               No. L'analisi avviene sul tuo Mac e InsideApp non contatta servizi
-              esterni. Se scegli di incollare un rapporto in Claude Code, quel
-              testo viene elaborato dal servizio di Anthropic.
+              esterni, salvo le funzioni di rete che chiedi esplicitamente. Se
+              usi Claude Code, ciò che gli invii o che il server MCP gli
+              restituisce viene elaborato dal servizio di Anthropic.
             </p>
           </details>
           <details>
@@ -435,8 +449,9 @@ npm run build:cached</code></pre>
             <summary>Funziona su Windows o Linux?</summary>
             <p>
               Oggi è verificato solo su Mac con Apple Silicon. Può analizzare
-              file Windows, ma non gira su Windows. Linux non è ancora stato
-              provato.
+              file Windows, ma su Windows non è supportato: esistono adattatori
+              sperimentali, non ancora verificati su un computer Windows reale.
+              Linux non è ancora stato provato.
             </p>
           </details>
           <details>
@@ -451,7 +466,8 @@ npm run build:cached</code></pre>
             <summary>Quanto costa?</summary>
             <p>
               Niente. InsideApp è open source con licenza MIT e non usa servizi
-              a pagamento.
+              a pagamento. Solo Claude Code, se scegli di usarlo, richiede un
+              tuo abbonamento.
             </p>
           </details>
         </div>
@@ -515,8 +531,9 @@ npm run build:cached</code></pre>
         </p>
         <p>
           Derivato da REA di morluto. Claude e Claude Code sono marchi di
-          Anthropic; Ghidra è un progetto della NSA. I nomi sono citati solo per
-          descrivere le integrazioni.
+          Anthropic; Ghidra è un progetto della NSA; macOS è un marchio di Apple
+          Inc. e Windows di Microsoft Corporation. I nomi sono citati solo per
+          descrivere compatibilità e integrazioni, senza affiliazione.
         </p>
       </div>
     </footer>

@@ -1,5 +1,3 @@
-import { stat } from "node:fs/promises";
-
 import type { AnalysisError } from "../../domain/analysisErrorBase.js";
 import {
   AnalysisInputError,
@@ -25,7 +23,6 @@ import {
   type ReportEvidenceSet,
   type ReportRoute,
 } from "./generateReport.js";
-import { isTooBroadReportFolder } from "./reportTarget.js";
 
 const OPERATION = "create_report";
 
@@ -102,22 +99,14 @@ export const createReportEvidence = async (
       "InsideApp analizza solo software dell'utente o che l'utente è autorizzato ad analizzare: chiedi conferma all'utente e ripeti con authorized: true.",
       "authorized",
     );
-  const isDirectory = await stat(path).then(
-    (info) => info.isDirectory(),
-    () => false,
-  );
-  if (isDirectory && isTooBroadReportFolder(path, options.homeDirectory))
-    return refused(
-      "La cartella è troppo ampia (radice del disco, cartella di primo livello o cartella Inizio): scegli un'applicazione o una cartella più specifica.",
-      "path",
-    );
   const seen: { set?: ReportEvidenceSet; route?: ReportRoute } = {};
   const report = await generateReport(
     { path, authorized },
     capturing(ports, seen),
     {
       generatedAt: (options.now ?? (() => new Date()))(),
-      homeDirectory: undefined,
+      // Used for the broad-folder rule; the returned report drops the path.
+      homeDirectory: options.homeDirectory,
       signal: options.signal,
     },
   );
@@ -127,6 +116,11 @@ export const createReportEvidence = async (
       return err({ kind: "analysis", projection: error.failure });
     if (error.kind === "authorization-required")
       return refused("Autorizzazione mancante.", "authorized");
+    if (error.kind === "folder-too-broad")
+      return refused(
+        "La cartella è troppo ampia (radice del disco, cartella di primo livello o cartella Inizio): scegli un'applicazione o una cartella più specifica.",
+        "path",
+      );
     return err({
       kind: "error",
       error: new AnalysisOutputError(OPERATION, error.error.reason, {

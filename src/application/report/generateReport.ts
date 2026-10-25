@@ -5,6 +5,7 @@ import type { InsideAppReport } from "../../domain/report/insideAppReport.js";
 import { err, type Result } from "../../domain/result.js";
 import { findAppBundleResourceRoot } from "../AppBundleExecutable.js";
 import { isJavaScriptApplicationPath } from "../javascript/javascriptApplicationPath.js";
+import { isTooBroadReportFolder } from "./reportTarget.js";
 import {
   createInsideAppReport,
   type InsideAppReportError,
@@ -58,6 +59,8 @@ export interface GenerateReportRequest {
 
 export type GenerateReportError<Failure> =
   | { readonly kind: "authorization-required" }
+  /** A disk or share root, a first-level folder, the home folder or its parent. */
+  | { readonly kind: "folder-too-broad" }
   | { readonly kind: "analysis-failed"; readonly failure: Failure }
   | { readonly kind: "report-failed"; readonly error: InsideAppReportError };
 
@@ -106,7 +109,8 @@ export const selectReportRoute = async (path: string): Promise<ReportRoute> => {
 
 /**
  * Shared report workflow for every adapter: refuse undeclared authorization
- * before reading the target, run the selected analysis, and project its
+ * before reading the target and folders that would sweep a disk or account,
+ * run the selected analysis, and project its
  * Evidence into a report. Rendering and storage stay with the adapter.
  */
 export const generateReport = async <Failure>(
@@ -117,6 +121,15 @@ export const generateReport = async <Failure>(
   if (!request.authorized) return err({ kind: "authorization-required" });
   if (!isAbsolute(request.path))
     throw new TypeError("generateReport requires an absolute path");
+  const isDirectory = await stat(request.path).then(
+    (info) => info.isDirectory(),
+    () => false,
+  );
+  if (
+    isDirectory &&
+    isTooBroadReportFolder(request.path, options.homeDirectory)
+  )
+    return err({ kind: "folder-too-broad" });
   const route = await selectReportRoute(request.path);
   const evidence = await ports[route](request.path, options.signal);
   if (!evidence.ok)

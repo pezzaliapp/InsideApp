@@ -146,6 +146,17 @@ export const registerReportCommands = (
             const { error } = report;
             if (error.kind === "authorization-required")
               return authorizationRequired();
+            if (error.kind === "folder-too-broad")
+              return projectAnalysisError(
+                new AnalysisInputError(
+                  "report",
+                  {
+                    userMessage:
+                      "La cartella è troppo ampia (radice del disco o di una condivisione, cartella di primo livello, cartella Inizio o del profilo): indica un'applicazione o una cartella più specifica.",
+                  },
+                  [{ path: ["path"], reason: "invalid_value" }],
+                ),
+              );
             if (error.kind === "analysis-failed") return error.failure;
             return projectAnalysisError(
               new AnalysisOutputError("report", error.error.reason, {

@@ -93,6 +93,33 @@ describe("InsideApp report command", () => {
   );
 
   it(
+    "refuses folders that would sweep the disk or the account, like the GUI and MCP",
+    async () => {
+      const host = await createIsolatedHost();
+      const output = join(host.home, "..", "tmp", "rapporti");
+      for (const path of ["/", "/Applications", host.home]) {
+        const result = await runLauncher(host, [
+          "report",
+          path,
+          "--authorized",
+          "--output-dir",
+          output,
+          "--json",
+        ]);
+        expect(result.exitCode, path).toBe(1);
+        expect(JSON.parse(result.stdout), path).toMatchObject({
+          code: "invalid_request",
+          message: expect.stringContaining("troppo ampia"),
+          details: { issues: [{ path: ["path"], reason: "invalid_value" }] },
+        });
+      }
+      await expect(readdir(output)).rejects.toMatchObject({ code: "ENOENT" });
+      await expectNoHostSideEffects(host);
+    },
+    TIMEOUT_MS,
+  );
+
+  it(
     "reports the Electron example with classified claims and verifiable evidence",
     async () => {
       const host = await createIsolatedHost();

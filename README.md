@@ -210,6 +210,8 @@ HTML e Markdown nella cartella `rapporti-insideapp/` (esclusa da Git):
 
 - `--authorized` è obbligatorio: dichiara che il software è tuo o che sei
   autorizzato ad analizzarlo (vedi [AVVERTENZE.md](AVVERTENZE.md)).
+- Come nell'interfaccia e in Claude Code, la radice del disco, le cartelle di
+  primo livello e la cartella Inizio sono rifiutate.
 - **Cosa analizza, sempre in modo statico:**
   - **App Electron** (cartelle o file `.asar`): processo principale, preload, finestre, canali IPC, API esposte, moduli.
   - **App macOS** (`.app`):
@@ -232,8 +234,10 @@ HTML e Markdown nella cartella `rapporti-insideapp/` (esclusa da Git):
   marcata come **Osservato**, **Derivato**, **Ipotesi** o **Sconosciuto** e
   riporta la prova: file, riga, SHA-256, Evidence e metodo del motore.
 - La pagina HTML è autonoma: nessuno script, nessuna risorsa esterna, tema chiaro
-  e scuro, stampabile in PDF dal browser. Il percorso della cartella home è
-  mostrato come `~`.
+  e scuro, stampabile in PDF dal browser. A differenza dei rapporti
+  dell'interfaccia e di Claude Code, contiene il percorso dell'elemento
+  analizzato, con la cartella home mostrata come `~`: controllalo prima di
+  condividere il file.
 - Nessuna esecuzione dell'applicazione analizzata e nessuna connessione di rete.
 
 ### Interfaccia locale
