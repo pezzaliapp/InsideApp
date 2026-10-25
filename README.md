@@ -143,7 +143,7 @@ HTML e Markdown nella cartella `rapporti-insideapp/` (esclusa da Git):
   mostrato come `~`.
 - Nessuna esecuzione dell'applicazione analizzata e nessuna connessione di rete.
 
-### Interfaccia locale (anteprima)
+### Interfaccia locale
 
 ```bash
 ./scripts/insideapp.sh gui                 # apre il browser predefinito
@@ -151,7 +151,14 @@ HTML e Markdown nella cartella `rapporti-insideapp/` (esclusa da Git):
 ./scripts/insideapp.sh gui --idle-timeout-minutes 60
 ```
 
-- **Cosa offre:** per ora la pagina mostra lo stato del motore e le due modalità, autonoma e Claude Code. La scelta dell'applicazione e l'analisi dall'interfaccia arriveranno nella prossima versione; nel frattempo usa `report`.
+- **Come si usa:** il flusso è **Seleziona → Analizza → Comprendi → Esporta**.
+  1. Dichiari che il software è tuo o che sei autorizzato ad analizzarlo.
+  2. Scegli un file, un'app `.app` o una cartella con la finestra nativa di macOS.
+  3. Avvii l'analisi: vedi la fase e il tempo trascorso, e puoi annullare.
+  4. Leggi il rapporto con le classi Osservato, Derivato, Ipotesi e Sconosciuto e le prove; puoi filtrarlo per classe.
+  5. Lo scarichi in HTML o Markdown, oppure lo stampi o salvi in PDF dal browser.
+- **Cosa analizza oggi:** le app Electron (cartelle o file `.asar`) con l'analisi completa; gli altri file e i bundle `.app` con l'ispezione generica. L'analisi dedicata di `.app`, `.exe`, `.dll` e SQLite arriverà in una prossima versione.
+- **Privacy:** InsideApp legge solo l'elemento che scegli. Il percorso resta nel processo locale: non arriva al browser e non compare nei rapporti esportati. Le applicazioni analizzate non vengono mai eseguite.
 - **Dove ascolta:** solo su `127.0.0.1`, su una porta scelta dal sistema. Non è raggiungibile da altri dispositivi della rete e non richiede di aprire il firewall.
 - **Come si accede:** a ogni avvio InsideApp scrive un file di avvio in `.cache/gui/`, leggibile solo dal tuo utente. Il file contiene un codice monouso valido 60 secondi, che non compare mai nel terminale né negli argomenti dei processi. Il browser lo scambia con un cookie di sessione `HttpOnly` e `SameSite=Strict`.
 - **Altri controlli:** ogni richiesta deve avere `Host` e `Origin` esatti e un'intestazione dedicata, contro gli attacchi DNS rebinding e CSRF. La pagina ha una Content Security Policy rigida e non carica risorse esterne.

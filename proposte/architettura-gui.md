@@ -1,7 +1,7 @@
 # Architettura di InsideApp: modalità autonoma e modalità Claude
 
-Stato: architettura approvata. G0 e G1 completati; G2–G5 da autorizzare uno
-alla volta. Sostituisce e dettaglia `proposte/gui-insideapp.md`.
+Stato: architettura approvata. G0, G1 e G2 completati; G3–G5 da autorizzare
+uno alla volta. Sostituisce e dettaglia `proposte/gui-insideapp.md`.
 
 ## 1. Obiettivi e vincoli
 
@@ -238,6 +238,36 @@ server.
 di Origin o dell'intestazione dedicata, la verifica della sessione, `HttpOnly`,
 il token monouso o i limiti del corpo, almeno un test fallisce.
 
+### 4.3 Implementazione in G2 (scelta, analisi, rapporto)
+
+| Misura                                                                                                                        | Dove                                   | Test che la dimostra                                                                               |
+| ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Scelta solo con la finestra nativa; AppleScript fisso, senza testo dell'utente, senza `tell application` né `do shell script` | `guiTargets.ts` (`osascriptArguments`) | `osascript` finto: argomenti esatti; `osacompile` compila i due script; annullamento = "cancelled" |
+| Percorsi solo nel processo: il browser riceve un identificativo opaco a 128 bit, il nome e il tipo                            | `GuiTargets`, `guiTargetView`          | nessun percorso nelle risposte; mutazione "percorso nella vista": 3 test falliscono                |
+| Analisi solo con dichiarazione esplicita (`authorized: true`) e solo di elementi scelti nella sessione                        | `startAnalysis`                        | `authorized` falso o assente: 400; identificativo sconosciuto: 404                                 |
+| Rapporti senza percorso locale, a schermo e nei file esportati                                                                | `GuiAnalyses` (`subject.path: null`)   | rapporto, Markdown e HTML senza percorso; identici al servizio condiviso, salvo il percorso        |
+| Errori in italiano, classificati per codice, senza testo del motore (che può contenere percorsi)                              | `failureMessage`                       | SQLite: "non è supportato in questa versione", nessun percorso                                     |
+| Una analisi alla volta, un solo dialogo aperto, al massimo 20 elementi e 10 rapporti in memoria                               | `GuiAnalyses`, `pickTarget`            | seconda analisi: 409; secondo dialogo: 409                                                         |
+| Annullamento reale tramite `AbortSignal`; il worker termina; la chiusura del server ferma il lavoro in corso                  | `cancel`, `close`                      | annullamento sotto 10 s; nessun processo figlio rimasto                                            |
+| Avanzamento senza percentuali: fase reale del motore e tempo trascorso; interrogazione ogni 2 s solo durante l'analisi        | `guiAssets.ts`                         | in Chrome intervalli ≥ 1,9 s; nessuna interrogazione dopo la fine                                  |
+| Esportazione dal browser (download), senza scritture del server su disco                                                      | `export.html`, `export.md`             | nome file e `Content-Disposition` verificati                                                       |
+
+**Memoria (misurata in G2, limite non bloccante).** Le misure riguardano 20 analisi
+dell'app di esempio e 3 di un'app sintetica grande (200 file, circa 12.000
+funzioni).
+
+- L'heap JavaScript del server, dopo la garbage collection, resta stabile a
+  circa 50 MB: non c'è evidenza di perdite.
+- L'RSS del processo si stabilizza a circa 260 MB con le app piccole. Dopo
+  un'analisi grande (picco di circa 1,07 GB) resta intorno a 890 MB e cresce di
+  circa 6 MB per ripetizione: è compatibile con memoria nativa trattenuta
+  dall'allocatore, ma non è ancora verificato con più ripetizioni.
+- Il worker JavaScript resta in attesa tra un'analisi e l'altra (circa 220 MB)
+  e si chiude con il server.
+
+Possibili interventi futuri: chiudere il worker dopo ogni analisi e misurare
+più ripetizioni.
+
 ## 5. Piano dei test
 
 Ogni test usa l'host isolato di `tests/fixtures/insideappHost.ts`: home
@@ -276,7 +306,7 @@ estesa per ammettere solo connessioni a `127.0.0.1` sulla porta della GUI.
 | ----- | ------------------------------------------------------------------------------------------------ | ------------------------------------------- |
 | G0    | `generateReport` applicativo, instradamento condiviso, CLI adattata, log npm locali (fatto)      | test della Fase 0 invariati, parità         |
 | G1    | server GUI sicuro (sessione, Host, Origin, CSRF, CSP, limiti, chiusura); pagina iniziale (fatto) | test di confine HTTP e mutazioni            |
-| G2    | flusso completo: liceità, scelta, analisi, rapporto, esportazione                                | test di flusso, parità ed effetti sull'host |
+| G2    | flusso completo: liceità, scelta, analisi, rapporto, esportazione (fatto)                        | test di flusso, parità ed effetti sull'host |
 | G3    | avanzamento, annullamento, formati prioritari (sotto)                                            | rapporti sulle fixture di ciascun tipo      |
 | G4    | modalità Claude: testo per Claude Code; strumento MCP `create_report` sullo stesso servizio      | test MCP e catalogo a 228 strumenti         |
 | G5    | sito statico su `insideapp.pezzalihub.app` (Cloudflare Free)                                     | sito pubblicato dopo la tua approvazione    |

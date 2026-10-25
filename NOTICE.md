@@ -60,4 +60,6 @@ conservati integralmente in:
   (`src/domain/report/`, `src/application/report/`, `src/cli/reportCommands.ts`).
 - Servizio condiviso `generateReport` per CLI, interfaccia e MCP.
 - Interfaccia locale `gui` (`src/gui/`): server su 127.0.0.1 con sessione
-  monouso, cookie HttpOnly, controlli Host/Origin/CSRF e CSP rigida.
+  monouso, cookie HttpOnly, controlli Host/Origin/CSRF e CSP rigida;
+  scelta nativa dei file, analisi con avanzamento e annullamento, rapporto
+  ed esportazione dal browser.

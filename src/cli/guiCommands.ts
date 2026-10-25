@@ -12,7 +12,11 @@ import { withCommandCancellation } from "./commandCancellation.js";
 import type { CliInstance } from "./types.js";
 
 /** Register `gui`: the local interface, served on 127.0.0.1 until closed. */
-export const registerGuiCommands = (cli: CliInstance, logger: Logger): void => {
+export const registerGuiCommands = (
+  cli: CliInstance,
+  logger: Logger,
+  environment: Readonly<Record<string, string | undefined>>,
+): void => {
   cli.command(CLI_COMMANDS.gui, {
     description:
       "Avvia l'interfaccia locale di InsideApp su 127.0.0.1; si chiude con Ctrl+C, dalla pagina o dopo un periodo di inattività",
@@ -41,6 +45,8 @@ export const registerGuiCommands = (cli: CliInstance, logger: Logger): void => {
             projectRoot,
             launcherDirectory: guiLauncherDirectory(projectRoot),
             idleTimeoutMs: options.idleTimeoutMinutes * 60_000,
+            environment,
+            logger,
             signal,
           });
           // The origin and the launch file path carry no secret; the token

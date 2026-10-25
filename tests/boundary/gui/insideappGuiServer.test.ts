@@ -1,141 +1,23 @@
-import { request as httpRequest } from "node:http";
-import { connect } from "node:net";
 import { readFile, readdir, stat } from "node:fs/promises";
 import { dirname } from "node:path";
 
-import { describe, expect, it, onTestFinished } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { GUI_CONTENT_SECURITY_POLICY } from "../../../src/gui/guiSecurity.js";
 import {
   GUI_MAX_BODY_BYTES,
   startGuiServer,
-  type RunningGui,
 } from "../../../src/gui/guiServer.js";
+import {
+  apiHeaders,
+  jsonPost,
+  launchToken,
+  refusesConnections,
+  send,
+  signedIn,
+  startGui,
+} from "../../fixtures/insideappGuiClient.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
-
-interface Sent {
-  readonly status: number;
-  readonly headers: Readonly<Record<string, string | string[] | undefined>>;
-  readonly body: string;
-}
-
-/** Raw HTTP so tests control Host, Origin and every other header. */
-const send = (
-  gui: RunningGui,
-  {
-    method = "GET",
-    path = "/",
-    headers = {},
-    body,
-  }: {
-    readonly method?: string;
-    readonly path?: string;
-    readonly headers?: Record<string, string>;
-    readonly body?: string | undefined;
-  } = {},
-): Promise<Sent> =>
-  new Promise((resolve, reject) => {
-    const url = new URL(gui.origin);
-    const request = httpRequest(
-      {
-        host: url.hostname,
-        port: url.port,
-        method,
-        path,
-        headers: { Host: url.host, ...headers },
-      },
-      (response) => {
-        let text = "";
-        response.setEncoding("utf8");
-        response.on("data", (chunk: string) => (text += chunk));
-        response.on("end", () =>
-          resolve({
-            status: response.statusCode ?? 0,
-            headers: response.headers,
-            body: text,
-          }),
-        );
-      },
-    );
-    request.on("error", reject);
-    if (body !== undefined) request.write(body);
-    request.end();
-  });
-
-const apiHeaders = (
-  gui: RunningGui,
-  cookie?: string,
-): Record<string, string> => ({
-  Origin: gui.origin,
-  "Sec-Fetch-Site": "same-origin",
-  "X-InsideApp-Request": "1",
-  ...(cookie === undefined ? {} : { Cookie: cookie }),
-});
-
-const jsonPost = (
-  gui: RunningGui,
-  path: string,
-  value: unknown,
-  cookie?: string,
-) => {
-  const body = JSON.stringify(value);
-  return send(gui, {
-    method: "POST",
-    path,
-    headers: {
-      ...apiHeaders(gui, cookie),
-      "Content-Type": "application/json",
-      "Content-Length": String(Buffer.byteLength(body)),
-    },
-    body,
-  });
-};
-
-const launchToken = async (gui: RunningGui): Promise<string> => {
-  const page = await readFile(gui.launcher.path, "utf8");
-  const match =
-    /url=http:\/\/127\.0\.0\.1:\d+\/avvio#([A-Za-z0-9_-]{43})"/u.exec(page);
-  if (match === null) throw new Error("launch page has no token");
-  return match[1]!;
-};
-
-const startGui = async (
-  overrides: { idleTimeoutMs?: number; now?: () => number } = {},
-) => {
-  const root = await createTestTempDirectory("rea-insideapp-gui-");
-  const gui = await startGuiServer({
-    projectRoot: root,
-    launcherDirectory: `${root}/.cache/gui`,
-    idleTimeoutMs: overrides.idleTimeoutMs ?? 60_000,
-    ...(overrides.now === undefined ? {} : { now: overrides.now }),
-  });
-  onTestFinished(async () => {
-    await gui.stop("shutdown");
-  });
-  return { gui, root };
-};
-
-/** Start, redeem the launch token and return the session cookie. */
-const signedIn = async () => {
-  const started = await startGui();
-  const response = await jsonPost(started.gui, "/api/session", {
-    token: await launchToken(started.gui),
-  });
-  expect(response.status).toBe(204);
-  const cookie = String(response.headers["set-cookie"]).split(";", 1)[0]!;
-  return { ...started, cookie };
-};
-
-const refusesConnections = (gui: RunningGui): Promise<boolean> =>
-  new Promise((resolve) => {
-    const url = new URL(gui.origin);
-    const socket = connect(Number(url.port), url.hostname);
-    socket.once("connect", () => {
-      socket.destroy();
-      resolve(false);
-    });
-    socket.once("error", () => resolve(true));
-  });
 
 describe("InsideApp GUI listener and launch token", () => {
   it("listens only on 127.0.0.1 with an assigned port and an owner-only launch file", async () => {

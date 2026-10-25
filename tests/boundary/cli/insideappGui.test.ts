@@ -202,7 +202,9 @@ describe("InsideApp gui command", () => {
       ]);
       // Keyboard reaches the controls in order.
       await page.keyboard.press("Tab");
-      expect(await page.evaluate("document.activeElement?.id")).toBe("refresh");
+      expect(await page.evaluate("document.activeElement?.id")).toBe(
+        "authorized",
+      );
 
       await page.locator("#shutdown").click();
       await expect

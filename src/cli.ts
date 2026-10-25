@@ -173,7 +173,7 @@ export const createCli = (
     environment,
     analysis.runProviderAnalysis,
   );
-  registerGuiCommands(cli, logger);
+  registerGuiCommands(cli, logger, environment);
   presentOmittableDefaults(cli);
   if (resultOutput !== undefined) streamCliCommandResults(cli, resultOutput);
   const serveStrict = rejectSurplusCliArguments(cli);
