@@ -266,9 +266,10 @@
             <li>
               <strong>Rapporti senza esecuzione.</strong> Per i rapporti e
               nell'interfaccia il software analizzato viene letto, mai avviato
-              né emulato. Alcuni strumenti avanzati del motore, da terminale o
-              con Claude Code (debugger, Frida, cattura di scenari), avviano un
-              programma solo se lo chiedi esplicitamente.
+              né emulato. Gli strumenti dinamici del motore (debugger, Frida,
+              cattura di scenari, comandi su dispositivi Android), da terminale
+              o con Claude Code, sono disattivati: funzionano solo se avvii tu
+              InsideApp con un consenso esplicito per l'analisi dinamica.
             </li>
             <li>
               <strong>Tutto in locale.</strong> Nessun file o rapporto viene
@@ -403,10 +404,11 @@ npm run build:cached</code></pre>
               lettura del sistema, come <code>codesign</code> e
               <code>plutil</code>, ma l'applicazione analizzata non viene
               eseguita. Da terminale o con Claude Code esistono anche strumenti
-              avanzati (debugger, Frida, cattura di scenari), quasi sempre
-              basati su programmi da installare a parte, che avviano un
-              programma solo su tua richiesta esplicita: usali solo su software
-              autorizzato e in un ambiente isolato.
+              dinamici (debugger, Frida, cattura di scenari, comandi su
+              dispositivi Android), quasi sempre basati su programmi da
+              installare a parte. Sono disattivati e la dichiarazione per
+              l'analisi statica non basta ad attivarli: servono un tuo consenso
+              esplicito all'avvio di InsideApp e un ambiente isolato.
             </p>
           </details>
           <details>

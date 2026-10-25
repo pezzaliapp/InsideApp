@@ -37,6 +37,13 @@ import {
   AnalysisResourceConstraintError,
 } from "../domain/analysisErrorCore.js";
 import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
+import { AnalysisCapabilityUnavailableError } from "../domain/analysisErrorCore.js";
+import {
+  DYNAMIC_ANALYSIS_ENVIRONMENT,
+  DYNAMIC_ANALYSIS_TOOLS,
+  dynamicAnalysisAllowed,
+  dynamicAnalysisRefusalMessage,
+} from "../dynamicAnalysisPolicy.js";
 import { createEvidence } from "../domain/evidence.js";
 import { jsonObjectSchema, type JsonValue } from "../domain/jsonValue.js";
 import {
@@ -262,7 +269,36 @@ export class EvidenceMcpServerCore extends RequestTrackingMcpServer {
         : undefined;
     const registeredConfig =
       inputSchema === undefined ? config : { ...config, inputSchema };
-    return this.bindTool(name, registeredConfig as never, callback as never);
+    return this.bindTool(
+      name,
+      registeredConfig as never,
+      this.withDynamicAnalysisPolicy(name, callback) as never,
+    );
+  }
+
+  /**
+   * Every tool passes through here, so a dynamic operation cannot be reached
+   * through another registration path. It runs only when the user started the
+   * server with dynamic analysis allowed.
+   */
+  private withDynamicAnalysisPolicy<Callback>(
+    name: string,
+    callback: Callback,
+  ): Callback {
+    if (!DYNAMIC_ANALYSIS_TOOLS.has(name)) return callback;
+    const run = callback as (...args: unknown[]) => unknown;
+    return ((...args: unknown[]) =>
+      dynamicAnalysisAllowed(process.env)
+        ? run(...args)
+        : this.delivery.toErrorToolResult(
+            new AnalysisCapabilityUnavailableError(
+              "insideapp-policy",
+              name,
+              `dynamic analysis is disabled; set ${DYNAMIC_ANALYSIS_ENVIRONMENT}=1 when starting InsideApp to allow it`,
+              { userMessage: dynamicAnalysisRefusalMessage(name) },
+            ),
+            false,
+          )) as Callback;
   }
 
   protected bindTool(

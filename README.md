@@ -312,6 +312,37 @@ screenshot di pagine web, recupero di source map remote, `environment-serve`
 (server HTTP locale) e `data/add` con un URL https. Usale solo su siti e
 servizi che sei autorizzato ad analizzare.
 
+### Analisi dinamica: disattivata per impostazione predefinita
+
+I rapporti, l'interfaccia e `create_report` usano solo analisi statiche. Il
+motore offre però anche strumenti dinamici che possono avviare o strumentare
+programmi, usare un debugger, guidare un browser o un'app, o modificare un
+dispositivo Android collegato:
+
+- debugger e console: `cutter_command`, `execute_rizin_command`,
+  `start_rizin_debug_session`, `rizin_debug_command`,
+  `close_rizin_debug_session`, `gdb_console`, `close_gdb_session`;
+- Frida: `instrument_with_frida`, `start_frida_session`, `load_frida_script`,
+  `resume_frida_session`, `unload_frida_script`, `close_frida_session`;
+- scenari e osservazioni dinamiche: `capture_process_scenario`,
+  `capture_electron_scenario`, `capture_browser_scenario`,
+  `capture_native_ui_scenario`, `observe_native_calls`,
+  `observe_web_execution`;
+- dispositivi Android: `push_adb_file`, `install_adb_package`,
+  `uninstall_adb_package`, `start_adb_app`, `start_adb_activity`,
+  `stop_adb_app`.
+
+La dichiarazione di autorizzazione all'analisi statica non li copre: InsideApp
+li rifiuta, da terminale e da Claude Code, finché non lo avvii tu con
+`INSIDEAPP_ALLOW_DYNAMIC_ANALYSIS=1`, ad esempio
+`INSIDEAPP_ALLOW_DYNAMIC_ANALYSIS=1 ./scripts/insideapp.sh capture-process scenario.json`
+oppure `INSIDEAPP_ALLOW_DYNAMIC_ANALYSIS=1 claude` dalla cartella del progetto.
+La scelta vale solo per quel processo e non si può cambiare da una richiesta
+MCP. Usali solo su software e dispositivi tuoi o autorizzati, in un ambiente
+isolato: possono eseguire il programma analizzato con i permessi del tuo
+utente e usare la rete. Quasi tutti richiedono strumenti da installare a parte
+(Rizin, Cutter, GDB, Frida, adb, un browser).
+
 ## Privacy
 
 - Nessuna telemetria in InsideApp. La telemetria e il controllo aggiornamenti

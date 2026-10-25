@@ -96,6 +96,9 @@ cliTest.for(["full", "compact"] as const)(
         HOME: home,
         REA_LOG_LEVEL: "silent",
         REA_MCP_INPUT_SCHEMA_PROFILE: profile,
+        // The test runner's consent to InsideApp's dynamic tools.
+        INSIDEAPP_ALLOW_DYNAMIC_ANALYSIS:
+          process.env.INSIDEAPP_ALLOW_DYNAMIC_ANALYSIS ?? "",
       },
       stderr: "pipe",
     });

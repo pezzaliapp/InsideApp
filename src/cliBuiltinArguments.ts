@@ -1,3 +1,9 @@
+import {
+  DYNAMIC_ANALYSIS_CLI_COMMANDS,
+  dynamicAnalysisAllowed,
+  dynamicAnalysisRefusalMessage,
+} from "./dynamicAnalysisPolicy.js";
+
 /** Global output flags that take a value. */
 export const VALUED_OUTPUT_FLAGS: ReadonlySet<string> = new Set([
   "--format",
@@ -172,6 +178,30 @@ export const localDistributionRefusal = (
   return refusal === undefined
     ? undefined
     : `InsideApp: '${refusal.command.join(" ")}' non è disponibile perché ${refusal.reason}.`;
+};
+
+/**
+ * Refuse a CLI command that reaches a dynamic operation unless the user
+ * started InsideApp with dynamic analysis allowed. The MCP server enforces
+ * the same policy for its tools.
+ */
+export const dynamicAnalysisRefusal = (
+  normalized: readonly string[],
+  environment: Readonly<Record<string, string | undefined>>,
+): string | undefined => {
+  const tokens = splitIncurBuiltinArguments(normalized).command;
+  const [command] = tokens;
+  // Incur consumes a builtin help flag and prints help instead of running the
+  // command; a help-shaped token it keeps is an option value and runs.
+  const help = (flag: string) =>
+    normalized.includes(flag) && !tokens.includes(flag);
+  return command !== undefined &&
+    DYNAMIC_ANALYSIS_CLI_COMMANDS.has(command) &&
+    !help("--help") &&
+    !help("-h") &&
+    !dynamicAnalysisAllowed(environment)
+    ? dynamicAnalysisRefusalMessage(command)
+    : undefined;
 };
 
 /** Incur accepts the schema key and its kebab-case spelling. */

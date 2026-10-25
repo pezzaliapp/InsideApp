@@ -109,7 +109,8 @@ if (!(await compiledRuntimeExists(runtimeFiles))) {
   const configurationError = cliConfigurationError(process.env);
   const localDistributionRefusal = isShellCompletion
     ? undefined
-    : builtinArguments.localDistributionRefusal(cliArgs);
+    : (builtinArguments.localDistributionRefusal(cliArgs) ??
+      builtinArguments.dynamicAnalysisRefusal(cliArgs, process.env));
   let dispatchFailure;
   let closeCliJavaScriptResources;
   // Incur can exit from the callback below before this function returns.

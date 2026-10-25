@@ -218,6 +218,13 @@ export const cliProcessEnvironment = (
   compileCache?: string,
 ): NodeJS.ProcessEnv => ({
   PATH: process.env.PATH ?? "",
+  // The test runner's consent to dynamic tools; a caller environment can drop it.
+  ...(process.env.INSIDEAPP_ALLOW_DYNAMIC_ANALYSIS === undefined
+    ? {}
+    : {
+        INSIDEAPP_ALLOW_DYNAMIC_ANALYSIS:
+          process.env.INSIDEAPP_ALLOW_DYNAMIC_ANALYSIS,
+      }),
   // Native Windows APIs need the system root and a writable temporary
   // directory even when the command's application environment is empty.
   ...(process.platform === "win32"

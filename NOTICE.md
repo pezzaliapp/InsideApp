@@ -7,10 +7,14 @@ dal commit `f196ebf80665107aedc16892af25a1e1f9f26f43` (REA 6.7.0).
 ## Copyright
 
 - Codice originale di REA: Copyright (c) 2026 morluto, rilasciato con
-  [licenza MIT](LICENSE). Il file `LICENSE` è conservato senza modifiche.
+  [licenza MIT](LICENSE).
 - Modifiche e aggiunte di InsideApp: Copyright (c) 2026 Alessandro Pezzali
-  (PezzaliAPP), rilasciate anch'esse con licenza MIT alle stesse condizioni
-  del file `LICENSE`.
+  (PezzaliAPP), rilasciate anch'esse con licenza MIT alle stesse condizioni.
+
+Il file `LICENSE` conserva integralmente il copyright di morluto e il testo
+della licenza MIT; l'unica aggiunta è la riga di copyright di Alessandro
+Pezzali, che riguarda solo le modifiche e le aggiunte di InsideApp, non il
+codice originale di REA.
 
 La storia Git completa di REA è conservata in questo repository: ogni modifica
 di InsideApp è distinguibile dal codice originale tramite `git log` e `git diff`.

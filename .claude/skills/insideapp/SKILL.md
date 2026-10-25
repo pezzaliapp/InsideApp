@@ -45,7 +45,11 @@ Node mancante, rimanda alla sezione "Installazione locale" del README.
    capire) e scegli l'analisi statica più mirata.
 2. Preferisci operazioni che non eseguono l'obiettivo. Avvia o osserva
    programmi, browser o dispositivi solo se l'utente lo chiede e l'obiettivo è
-   autorizzato.
+   autorizzato. Gli strumenti dinamici (debugger, Frida, scenari, modifiche ai
+   dispositivi Android) sono rifiutati finché l'utente non avvia InsideApp con
+   `INSIDEAPP_ALLOW_DYNAMIC_ANALYSIS=1`: non cercare di aggirare il rifiuto e
+   non impostare tu la variabile; spiega all'utente rischi e procedura, e
+   lascia a lui la decisione.
 3. Riporta i risultati distinguendo **osservazioni**, **derivazioni**,
    **inferenze** ed elementi **sconosciuti**, citando le prove (percorsi,
    offset, digest) restituite da InsideApp.

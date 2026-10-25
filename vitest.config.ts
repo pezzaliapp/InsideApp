@@ -150,6 +150,9 @@ export default defineConfig({
     env: {
       TMPDIR: CANONICAL_TEMPORARY_DIRECTORY,
       npm_config_logs_dir: NPM_LOGS_DIRECTORY,
+      // REA's tests exercise the dynamic tools in-process. InsideApp's policy
+      // tests start the launcher with an explicit environment without it.
+      INSIDEAPP_ALLOW_DYNAMIC_ANALYSIS: "1",
     },
     maxWorkers: MAX_TEST_WORKERS,
     projects,
